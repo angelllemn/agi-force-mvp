@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run -r",
+    "spec:check": "vitest run -r",
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start"
@@ -25,8 +26,13 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.0.0",
     "@types/node": "^24.6.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "mastra": "^0.13.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.1"
   }
 }
