@@ -37,6 +37,32 @@
 
 ---
 
+## Comandos disponibles
+
+### Desarrollo
+```bash
+# Instalar dependencias
+npm install
+
+# Ejecutar tests de contrato
+npm test
+
+# Iniciar servidor Mastra (necesario para el puente Slack)
+npm run dev
+
+# Iniciar puente Slack (en otra terminal)
+npm run dev:slack
+```
+
+### Configuración inicial
+```bash
+# Copiar variables de entorno
+cp .env.example .env
+# Editar .env con tus tokens de Slack
+```
+
+---
+
 ## Principios y reglas (SDD)
 
 - **Idioma:** todo en **español** (issues, PRs, commits, docs).
@@ -70,26 +96,19 @@
 /openapi/                      # Contratos propios (YAML)
 /schemas/capabilities/         # JSON Schemas (capabilities/tools)
 /src/
-  core/                        # Dominio (entidades, VOs, reglas)
-  app/                         # Servicios/orquestación
   adapters/
     slack/                     # Bolt handlers (Socket Mode)
-    mastra/                    # agents/, tools/, rag/
-    integrations/              # jira/, linear/, google/, msft/, email/
-    http/                      # API propia (si aplica)
   infra/
     config/                    # Zod para .env
-    logging/                   # Pino/OpenTelemetry (opcional)
-    scheduler/                 # Timers/Jobs (proactividad)
-  shared/                      # Tipos, Result/Either, utilidades
+  mastra/                      # agents/, tools/, workflows/ (Mastra)
 /tests/
-  unit/
-  integration/
-  contract/                    # Validación de OpenAPI + Schemas
+  specs.test.ts               # Tests de contrato (OpenAPI + Schemas)
+/docs/                         # Guías (Slack, ADRs)
 .github/workflows/             # CI
-.devcontainer/                 # Codespaces
-docs/                          # Guías (Slack, ADRs)
+.env.example                   # Variables de entorno de ejemplo
 ```
+
+Para la arquitectura completa (core/, app/, etc.), ver `.specify/memory/constitution.md`.
 
 ---
 
@@ -139,6 +158,10 @@ El puente llamará a `POST /api/agents/{MASTRA_AGENT_ID}/generate` y responderá
 
 ## Integración con Slack (Socket Mode)
 
+> **Ver guía completa en [docs/slack_integration.md](docs/slack_integration.md)**
+
+### Configuración rápida:
+
 1. Crear app en <https://api.slack.com/apps> (**From scratch**, nombre: *PulseDesk*).  
 2. **Basic Information → App-Level Tokens** → crear token con scope `connections:write` → copiar **`xapp-…`**.  
 3. **OAuth & Permissions → Scopes (Bot Token)** → añadir `app_mentions:read` y `chat:write`.  
@@ -184,12 +207,13 @@ El puente llamará a `POST /api/agents/{MASTRA_AGENT_ID}/generate` y responderá
 
 ## Roadmap
 
-**P0 (este PR):**
-- [ ] OpenAPI (health + bridge/dispatch)  
-- [ ] Schemas base (diagnostics.echo)  
-- [ ] Tests de contrato + CI  
-- [ ] Puente Slack (Socket Mode) ↔ Mastra (`pulsedesk`)  
-- [ ] README + guía Slack
+**P0 (este PR) - ✅ COMPLETADO:**
+- [x] OpenAPI (health + bridge/dispatch)  
+- [x] Schemas base (diagnostics.echo)  
+- [x] Tests de contrato + CI  
+- [x] Puente Slack (Socket Mode) ↔ Mastra (`pulsedesk`)  
+- [x] README + guía Slack
+- [x] Limpieza completa de `weather`
 
 **P1:**
 - [ ] Memoria persistente por usuario/hilo  
