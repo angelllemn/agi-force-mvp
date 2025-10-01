@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: PulseDesk Bridge API
+  version: 0.1.0
+  description: >
+    Endpoints propios del proyecto (no Mastra). Sirven para orquestación interna,
+    health-check y, opcionalmente, un puente Slack→agente.
+servers:
+  - url: http://localhost:5055
+paths:
+  /health:
+    get:
+      summary: Estado del servicio
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+  /bridge/slack/dispatch:
+    post:
+      summary: Recibe un mensaje de Slack y devuelve una respuesta candidata (para el hola mundo)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlackDispatchRequest'
+            examples:
+              ejemplo:
+                value:
+                  channelId: C123
+                  userId: U456
+                  text: "hola"
+                  threadTs: "1730392345.000100"
+      responses:
+        '200':
+          description: Respuesta del agente (mínima)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlackDispatchResponse'
+components:
+  schemas:
+    SlackDispatchRequest:
+      type: object
+      additionalProperties: false
+      required: [channelId, userId, text]
+      properties:
+        channelId: { type: string }
+        userId: { type: string }
+        text: { type: string, minLength: 1 }
+        threadTs: { type: string, description: "timestamp del hilo (opcional)" }
+    SlackDispatchResponse:
+      type: object
+      additionalProperties: false
+      required: [replyText]
+      properties:
+        replyText: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
