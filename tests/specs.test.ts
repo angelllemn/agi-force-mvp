@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import SwaggerParser from '@apidevtools/swagger-parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import SwaggerParser from '@apidevtools/swagger-parser';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
 
 const ajv = new Ajv({ strict: false, allErrors: true });
