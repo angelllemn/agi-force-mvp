@@ -1,7 +1,7 @@
 // @ts-ignore
 import pkg from '@slack/bolt';
-import { validateEnv } from '../../infra/config/env.js';
 const { App } = pkg;
+import { validateEnv } from '../../infra/config/env.js';
 
 const env = validateEnv();
 

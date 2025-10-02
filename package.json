@@ -8,11 +8,6 @@
     "spec:check": "vitest run",
     "dev": "mastra dev",
     "dev:slack": "tsx src/slack-bridge.ts",
-    "slack:bot": "tsx src/slack-bot.ts",
-    "slack:advanced": "tsx src/advanced-slack-bot.ts",
-    "slack:test": "tsx src/test-slack-bots.ts",
-    "slack:demo": "tsx src/demo-slack-simulation.ts",
-    "demo:slack": "tsx src/demo-slack-bot.ts",
     "build": "mastra build",
     "start": "mastra start"
   },
@@ -30,7 +25,6 @@
     "@mastra/loggers": "^0.10.14",
     "@mastra/memory": "^0.15.4",
     "@slack/bolt": "^4.4.0",
-    "@slack/oauth": "^3.0.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
