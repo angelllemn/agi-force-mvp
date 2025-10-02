@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run -r",
-    "spec:check": "vitest run -r",
+    "test": "vitest run",
+    "spec:check": "vitest run",
     "dev": "mastra dev",
+    "dev:slack": "tsx src/slack-bridge.ts",
     "build": "mastra build",
     "start": "mastra start"
   },
@@ -23,6 +24,7 @@
     "@mastra/libsql": "^0.15.0",
     "@mastra/loggers": "^0.10.14",
     "@mastra/memory": "^0.15.4",
+    "@slack/bolt": "^4.4.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "mastra": "^0.13.4",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
     "yaml": "^2.8.1"
