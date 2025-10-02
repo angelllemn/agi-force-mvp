@@ -1,4 +1,4 @@
-import { createWorkflow, createStep } from '@mastra/core';
+import { createStep, createWorkflow } from '@mastra/core';
 import { z } from 'zod';
 import { sendTestEmailTool } from '../tools/email.js';
 
@@ -33,17 +33,18 @@ const analyzeIntentStep = createStep({
       emailBody: z.string().optional(),
     }).optional(),
     context: z.string(),
+    userMessage: z.string(), // Pass through the original message
   }),
-  execute: async ({ context }) => {
-    const { userMessage } = context.input;
+  execute: async ({ inputData }) => {
+    const { userMessage } = inputData;
     const message = userMessage.toLowerCase();
-    
+
     console.log('🔍 Analyzing user intent for message:', userMessage);
-    
+
     // Simple intent classification
     let intent: 'greeting' | 'help_request' | 'email_request' | 'general_question' | 'goodbye';
     let extractedInfo = {};
-    
+
     if (message.includes('hola') || message.includes('hello') || message.includes('hi')) {
       intent = 'greeting';
     } else if (message.includes('help') || message.includes('ayuda') || message.includes('support') || message.includes('soporte')) {
@@ -61,11 +62,12 @@ const analyzeIntentStep = createStep({
     } else {
       intent = 'general_question';
     }
-    
+
     return {
       intent,
       extractedInfo: Object.keys(extractedInfo).length > 0 ? extractedInfo : undefined,
-      context: `User ${context.input.userId || 'unknown'} from ${context.input.channel || 'unknown channel'} with intent: ${intent}`,
+      context: `User ${inputData.userId || 'unknown'} from ${inputData.channel || 'unknown channel'} with intent: ${intent}`,
+      userMessage: inputData.userMessage, // Pass through the original message
     };
   },
 });
@@ -94,27 +96,27 @@ const generateResponseStep = createStep({
     }).optional(),
     needsFollowUp: z.boolean(),
   }),
-  execute: async ({ context }) => {
-    const { intent, extractedInfo, userMessage } = context.input;
-    
+  execute: async ({ inputData }) => {
+    const { intent, extractedInfo, userMessage } = inputData;
+
     console.log('💬 Generating response for intent:', intent);
-    
+
     let response: string;
     let shouldSendEmail = false;
     let emailData;
     let needsFollowUp = false;
-    
+
     switch (intent) {
       case 'greeting':
         response = '¡Hola! Soy PulseDesk, tu asistente conversacional. ¿En qué puedo ayudarte hoy? Puedo ayudarte con consultas generales, envío de emails de prueba, o cualquier pregunta que tengas.';
         needsFollowUp = true;
         break;
-        
+
       case 'help_request':
         response = 'Estoy aquí para ayudarte. Estas son algunas cosas que puedo hacer:\n• Responder preguntas generales\n• Enviar emails de prueba\n• Mantener conversaciones naturales\n• Proporcionar asistencia técnica básica\n\n¿Hay algo específico en lo que necesites ayuda?';
         needsFollowUp = true;
         break;
-        
+
       case 'email_request':
         if (extractedInfo?.emailTo) {
           shouldSendEmail = true;
@@ -129,16 +131,16 @@ const generateResponseStep = createStep({
           needsFollowUp = true;
         }
         break;
-        
+
       case 'goodbye':
         response = '¡Hasta luego! Ha sido un placer ayudarte. No dudes en contactarme si necesitas algo más.';
         break;
-        
+
       default:
         response = `Entiendo que tienes una consulta. Aunque no tengo una respuesta específica para "${userMessage}", estoy aquí para ayudarte con lo que necesites. ¿Podrías ser más específico sobre cómo puedo asistirte?`;
         needsFollowUp = true;
     }
-    
+
     return {
       response,
       shouldSendEmail,
@@ -160,41 +162,42 @@ const executeEmailStep = createStep({
       body: z.string(),
     }).optional(),
     response: z.string(),
+    needsFollowUp: z.boolean(),
   }),
   outputSchema: z.object({
     finalResponse: z.string(),
     actionTaken: z.string().optional(),
   }),
-  execute: async ({ context, mastra }) => {
-    const { shouldSendEmail, emailData, response } = context.input;
-    
+  execute: async ({ inputData, mastra }) => {
+    const { shouldSendEmail, emailData, response } = inputData;
+
     if (!shouldSendEmail || !emailData) {
       return {
         finalResponse: response,
         actionTaken: undefined,
       };
     }
-    
+
     console.log('📧 Executing email sending step');
-    
+
     try {
       // Use the email tool
       const emailResult = await sendTestEmailTool.execute!({
         input: emailData,
         mastra,
       } as any);
-      
+
       const finalResponse = `${response}\n\n✅ Email de prueba enviado exitosamente!\n📧 Destinatario: ${emailData.to}\n📝 Asunto: ${emailData.subject}\n🆔 ID del mensaje: ${emailResult.messageId}\n⏰ Enviado a las: ${emailResult.timestamp}`;
-      
+
       return {
         finalResponse,
         actionTaken: `Email de prueba enviado a ${emailData.to}`,
       };
     } catch (error) {
       console.error('❌ Error sending email:', error);
-      
+
       const finalResponse = `${response}\n\n❌ Lo siento, hubo un error al enviar el email de prueba. Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      
+
       return {
         finalResponse,
         actionTaken: `Error al enviar email: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -208,20 +211,6 @@ export const pulseDeskWorkflow = createWorkflow({
   id: 'pulsedesk-conversation',
   description: 'PulseDesk conversational workflow with email capabilities',
   inputSchema: pulseDeskInputSchema,
-  outputSchema: pulseDeskOutputSchema,
-  steps: [analyzeIntentStep, generateResponseStep, executeEmailStep],
-  flow: [
-    {
-      step: 'analyze_intent',
-      condition: () => true,
-    },
-    {
-      step: 'generate_response',
-      condition: () => true,
-    },
-    {
-      step: 'execute_email',
-      condition: () => true,
-    },
-  ],
-});
+  outputSchema: pulseDeskOutputSchema
+}).then(analyzeIntentStep).then(generateResponseStep).then(executeEmailStep)
+.commit();

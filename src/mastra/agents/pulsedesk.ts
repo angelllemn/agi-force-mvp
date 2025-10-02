@@ -1,7 +1,8 @@
+import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core';
-import { z } from 'zod';
+import { LibSQLStore } from '@mastra/libsql';
+import { Memory } from '@mastra/memory';
 import { sendTestEmailTool } from '../tools/email.js';
-
 /**
  * PulseDesk conversational agent
  * Facilitates human-like conversations and integrates with Slack
@@ -43,10 +44,11 @@ export const pulseDeskAgent = new Agent({
     
     Always respond in the same language the user is using, but default to Spanish for greetings.
   `,
-  model: {
-    provider: 'openai',
-    name: 'gpt-4o-mini',
-    toolChoice: 'auto',
-  },
-  tools: [sendTestEmailTool],
+  model: openai('gpt-4o-mini'),
+  tools: { sendTestEmailTool },
+  memory: new Memory({
+    storage: new LibSQLStore({
+      url: 'file:../mastra.db', // path is relative to the .mastra/output directory
+    }),
+  }),
 });

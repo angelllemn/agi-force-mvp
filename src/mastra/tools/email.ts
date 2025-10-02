@@ -19,7 +19,7 @@ export const sendTestEmailTool = createTool({
     timestamp: z.string().describe('Timestamp when email was processed'),
   }),
   execute: async ({ context }) => {
-    const { to, subject, body } = context.input;
+    const { to, subject, body } = context;
     
     console.log('📧 MOCK EMAIL TOOL - Email send attempt:');
     console.log(`   To: ${to}`);
