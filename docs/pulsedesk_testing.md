@@ -12,7 +12,7 @@ Esta guía te ayudará a probar el agente conversacional PulseDesk tanto directa
    SLACK_SIGNING_SECRET=your-signing-secret-here
 
    # Mastra Configuration
-   MASTRA_BASE_URL=http://localhost:4111
+   MASTRA_BASE_URL=http://localhost:4112
    MASTRA_AGENT_ID=pulsedesk
 
    # OpenAI Configuration (required for PulseDesk agent)
@@ -32,13 +32,13 @@ Esta guía te ayudará a probar el agente conversacional PulseDesk tanto directa
 npm run dev
 ```
 
-El servidor estará disponible en `http://localhost:4111`
+El servidor estará disponible en `http://localhost:4112`
 
 ### 2. Probar el agente con curl
 
 #### Saludo básico:
 ```bash
-curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
+curl -X POST http://localhost:4112/api/agents/pulsedesk/generate \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -54,7 +54,7 @@ curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
 
 #### Solicitud de ayuda:
 ```bash
-curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
+curl -X POST http://localhost:4112/api/agents/pulsedesk/generate \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -70,7 +70,7 @@ curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
 
 #### Envío de email de prueba:
 ```bash
-curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
+curl -X POST http://localhost:4112/api/agents/pulsedesk/generate \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -86,7 +86,7 @@ curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
 
 #### Pregunta general:
 ```bash
-curl -X POST http://localhost:4111/api/agents/pulsedesk/generate \
+curl -X POST http://localhost:4112/api/agents/pulsedesk/generate \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -148,9 +148,9 @@ En tu workspace de Slack, menciona al bot:
 ### Logs del servidor Mastra
 
 Al ejecutar `npm run dev`, deberías ver:
-- ✅ Servidor iniciado en puerto 4111
-- ✅ Playground disponible en http://localhost:4111/
-- ✅ API disponible en http://localhost:4111/api
+- ✅ Servidor iniciado en puerto 4112
+- ✅ Playground disponible en http://localhost:4112/
+- ✅ API disponible en http://localhost:4112/api
 
 ### Logs del puente Slack
 
