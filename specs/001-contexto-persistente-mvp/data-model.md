@@ -8,7 +8,7 @@
 
 ### ConversationContext
 **Descripción**: Entidad principal que representa el contexto de una conversación
-```typescript
+```typescriptw
 interface ConversationContext {
   readonly id: ContextId;
   readonly type: ContextType;

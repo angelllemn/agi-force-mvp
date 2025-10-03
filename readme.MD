@@ -156,6 +156,43 @@ El puente llamará a `POST /api/agents/{MASTRA_AGENT_ID}/generate` y responderá
 
 ---
 
+## Contexto Persistente
+
+El sistema incluye un sistema de **memoria conversacional persistente** que mantiene el historial de conversaciones del bot con usuarios y grupos.
+
+### Características principales:
+
+- ✅ **Contextos separados** para DMs de usuario y canales de grupo
+- ✅ **Retención de 30 días** con renovación automática en cada interacción
+- ✅ **Arquitectura hexagonal** con core domain y adapters
+- ✅ **52 tests** (integración + unit) verificando todos los casos de uso
+- ✅ **Integración con Slack** para procesamiento automático de mensajes
+
+### Uso básico:
+
+```typescript
+import { InMemoryConversationRepository } from './src/adapters/memory/InMemoryConversationRepository.js';
+import { SlackContextIntegration } from './src/adapters/slack/SlackContextIntegration.js';
+
+const repository = new InMemoryConversationRepository();
+const slackIntegration = new SlackContextIntegration(repository);
+
+// Procesar mensaje de Slack
+const context = await slackIntegration.processMessage({
+  user: 'U12345',
+  text: 'Hello bot!',
+  channel: 'D12345',
+  channelType: 'im',
+  ts: '1234567890.000000',
+});
+
+// context contiene el historial completo de la conversación
+```
+
+**Documentación completa:** [docs/contexto-persistente-implementation.md](docs/contexto-persistente-implementation.md)
+
+---
+
 ## Integración con Slack (Socket Mode)
 
 > **Ver guía completa en [docs/slack_integration.md](docs/slack_integration.md)**
@@ -214,9 +251,11 @@ El puente llamará a `POST /api/agents/{MASTRA_AGENT_ID}/generate` y responderá
 - [x] Puente Slack (Socket Mode) ↔ Mastra (`pulsedesk`)  
 - [x] README + guía Slack
 - [x] Limpieza completa de `weather`
+- [x] **Contexto Persistente (MVP)** - Sistema de memoria conversacional (ver [docs/contexto-persistente-implementation.md](docs/contexto-persistente-implementation.md))
 
 **P1:**
-- [ ] Memoria persistente por usuario/hilo  
+- [ ] PostgreSQL implementation para contexto persistente
+- [ ] API REST para gestión de contexto
 - [ ] RAG (KB) — ingesta, embeddings, búsqueda y citas  
 - [ ] Capabilities: `kb.search`, `ticket.create`, `ticket.update`, `calendar.schedule`, `email.send`  
 - [ ] Proactividad (timers SLA + webhooks de tickets)  
