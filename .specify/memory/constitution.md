@@ -2,22 +2,21 @@
 
 <!--
 Sync Impact Report (Updated: 2025-10-03):
-- Version change: 1.1.0 → 1.2.0 (MINOR - added documentation and integration sources principle)
-- Modified principles: None
-- Added sections:
-  - New section 5) Documentación y fuentes oficiales (Context7 MCP requirement)
+- Version change: 1.2.0 → 1.3.0 (MINOR - enhanced language rules with code/documentation separation)
+- Modified principles: 
+  - Section 2) Idioma y estilo - expanded with functional code language requirements
+- Added sections: None
 - Removed sections: None
-- Section renumbering: Sections 5-16 shifted to 6-17
 - Templates requiring updates:
-  ✅ plan-template.md - Constitution Check section aligns with new principles
-  ✅ spec-template.md - Architecture constraints properly referenced
-  ✅ tasks-template.md - Task categorization reflects principle-driven development
+  ✅ plan-template.md - Constitution Check section aligns with language principles
+  ✅ spec-template.md - Language requirements properly referenced
+  ✅ tasks-template.md - Task categorization reflects coding standards
 - Follow-up TODOs: None
 -->
 
 # Constitución de Desarrollo — PulseDesk (MVP)
 
-**Versión:** 1.2.0  
+**Versión:** 1.3.0  
 **Ratificada:** 2025-10-01  
 **Última enmienda:** 2025-10-03
 
@@ -31,9 +30,27 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 
 **Arquitectura objetivo:** Minimalista y suficiente para el MVP, siguiendo principios de **arquitectura hexagonal/clean** que permita evolución controlada y testing efectivo.
 
-## 2) Idioma y estilo
-- Idioma **oficial: español** (issues, PRs, commits, docs, ejemplos).
+## 2) Idioma y estilo — **Reglas de idioma obligatorias**
+
+### Código funcional
+- **OBLIGATORIO**: Todo código funcional (variables, funciones, clases, interfaces, tipos, etc.) DEBE escribirse en **inglés**.
+- **Naming conventions**: camelCase para variables/funciones, PascalCase para clases/interfaces, UPPER_SNAKE_CASE para constantes.
+- **API contracts**: OpenAPI y JSON Schemas en inglés para interoperabilidad.
+
+### Documentación y comentarios
+- **OBLIGATORIO**: Comentarios en código, documentación técnica (README, ADRs, specs), y issues/PRs DEBEN escribirse en **español**.
+- **Idioma oficial del proyecto**: español para toda comunicación (commits, mensajes de error de dominio, logs de negocio).
+- **JSDoc/TSDoc**: comentarios de documentación de funciones en español.
+
+### Excepciones controladas
+- **Librerías externas**: mantener nomenclatura original en inglés (no traducir).
+- **Standards externos**: HTTP status codes, métodos REST, etc. en inglés.
+- **Error messages**: errores técnicos de sistema en inglés, errores de dominio en español.
+
+### Principios generales
 - Comunicación clara, concisa y orientada a **contratos** y **criterios de aceptación**.
+- Consistencia en nomenclatura dentro del mismo contexto/módulo.
+- **Separación semántica**: inglés para implementación, español para comunicación humana.
 
 ## 3) Método: Spec‑Driven Development (SDD) — **NO negociable**
 1. **Especificaciones primero**: OpenAPI (endpoints propios) y JSON Schema (capabilities/tools).
