@@ -2,14 +2,12 @@
 
 <!--
 Sync Impact Report (Updated: 2025-10-03):
-- Version change: 1.0.0 → 1.1.0 (MINOR - enhanced architecture guidance and quality standards)
-- Modified principles:
-  - Architecture & Design: Enhanced hexagonal/clean architecture requirements
-  - Code Standards: Strengthened TypeScript strictness and error handling
-  - Testing & Quality: Added specific coverage and testing strategy requirements
-  - Observability: Enhanced structured logging and correlation ID requirements
-- Added sections: None
+- Version change: 1.1.0 → 1.2.0 (MINOR - added documentation and integration sources principle)
+- Modified principles: None
+- Added sections:
+  - New section 5) Documentación y fuentes oficiales (Context7 MCP requirement)
 - Removed sections: None
+- Section renumbering: Sections 5-16 shifted to 6-17
 - Templates requiring updates:
   ✅ plan-template.md - Constitution Check section aligns with new principles
   ✅ spec-template.md - Architecture constraints properly referenced
@@ -19,7 +17,7 @@ Sync Impact Report (Updated: 2025-10-03):
 
 # Constitución de Desarrollo — PulseDesk (MVP)
 
-**Versión:** 1.1.0  
+**Versión:** 1.2.0  
 **Ratificada:** 2025-10-01  
 **Última enmienda:** 2025-10-03
 
@@ -30,6 +28,8 @@ Construir un **agente Slack‑first** sobre **Mastra** que demuestre:
 - **Proactividad** (recordatorios, avisos, nudges)
 
 El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente hacia PulseDesk (KB/RAG, tickets, recordatorios).
+
+**Arquitectura objetivo:** Minimalista y suficiente para el MVP, siguiendo principios de **arquitectura hexagonal/clean** que permita evolución controlada y testing efectivo.
 
 ## 2) Idioma y estilo
 - Idioma **oficial: español** (issues, PRs, commits, docs, ejemplos).
@@ -84,7 +84,45 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 
 **Evolución**: empezar simple; añadir funcionalidad manteniendo la estructura hexagonal.
 
-## 5) Estructura de carpetas — **MVP Minimalista**
+## 5) Documentación y fuentes oficiales — **Context7 MCP obligatorio**
+
+### Principio fundamental
+- **TODA** consulta de documentación de integraciones y tecnologías externas DEBE realizarse exclusivamente a través del **Context7 MCP**.
+- **PROHIBIDO** usar documentación no oficial, blogs, tutoriales o fuentes no verificadas para decisiones de implementación.
+
+### Context7 MCP como fuente única
+- **Context7** es el **Model Context Protocol (MCP)** que provee documentación **probada y de fuentes oficiales**.
+- **Obligatorio** consultar Context7 antes de implementar cualquier integración con:
+  - **Slack APIs** (Bolt.js, Socket Mode, Web API)
+  - **Mastra Framework** (agents, tools, workflows)
+  - **Sistemas de tickets** (Jira, Linear, GitHub Issues)
+  - **Servicios cloud** (AWS, Google Cloud, Azure)
+  - **Frameworks y librerías** (Node.js, TypeScript, testing tools)
+
+### Validación de fuentes
+- **Documentación oficial únicamente**: Solo fuentes mantenidas por los creadores/mantenedores oficiales.
+- **Versiones actualizadas**: Verificar que la documentación corresponde a la versión específica en uso.
+- **Context7 verification**: Toda información técnica debe ser verificable a través de Context7.
+
+### Proceso obligatorio de investigación
+1. **Context7 first**: Consultar Context7 MCP para obtener documentación oficial
+2. **Version check**: Verificar compatibilidad con versiones específicas del proyecto
+3. **Official validation**: Confirmar que la información proviene de fuentes oficiales
+4. **Documentation**: Documentar decisiones técnicas con referencias a fuentes oficiales
+
+### Reglas de implementación
+- **NO** implementar funcionalidad basada en documentación no oficial
+- **NO** usar ejemplos de código de blogs o tutoriales no oficiales
+- **NO** seguir guías de terceros sin validación oficial
+- **SÍ** usar únicamente patrones y prácticas documentadas oficialmente vía Context7
+
+**Excepción**: En casos donde Context7 no tenga información disponible, se debe:
+1. Documentar explícitamente la limitación
+2. Crear un Issue para investigación adicional
+3. Obtener aprobación del Tech Lead antes de proceder
+4. Marcar como deuda técnica para revisión posterior
+
+## 6) Estructura de carpetas — **MVP Minimalista**
 ```
 /openapi/                      # Contratos propios (YAML)
 /schemas/capabilities/         # JSON Schemas de tools (contratos)
@@ -121,7 +159,7 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 /docs/                         # ADRs, decisiones técnicas
 ```
 
-## 6) Estándares de código — **Calidad mínima NO negociable**
+## 7) Estándares de código — **Calidad mínima NO negociable**
 
 ### TypeScript estricto
 - **OBLIGATORIO**: `"strict": true`, `noImplicitAny`, `noImplicitReturns`
@@ -144,7 +182,7 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 - **Fail-fast**: aplicación no inicia si configuración inválida
 - **Tipos derivados**: from Zod schemas para type safety
 
-## 7) Pruebas y cobertura — **Estrategia específica MVP**
+## 8) Pruebas y cobertura — **Estrategia específica MVP**
 
 ### Pirámide de testing
 - **Unitarias (80%)**: `core/` y `use-cases/` - rápidas y exhaustivas
@@ -167,7 +205,7 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 - **Contract tests**: validación automática de schemas
 - **Coverage gates**: PR bloqueado si cobertura disminuye
 
-## 8) Observabilidad — **Requisitos mínimos MVP**
+## 9) Observabilidad — **Requisitos mínimos MVP**
 
 ### Logging estructurado
 - **OBLIGATORIO**: Pino o similar con formato JSON
@@ -189,7 +227,7 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 - **Sentry** (opcional): para errores en producción
 - **Error categorization**: por tipo y origen (core vs adapter)
 
-## 9) CI/CD y quality gates — **Estricto para MVP**
+## 10) CI/CD y quality gates — **Estricto para MVP**
 - CI obligatorio en cada PR:
   - `typecheck` (tsc --noEmit), `lint` (ESLint), `format` (Prettier)
   - `test:unit`, `test:integration`, `test:contract`
@@ -199,33 +237,33 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 - **PRs pequeños**: < 300 LOC netas; dividir si excede
 - **Coverage gates**: CI falla si cobertura < thresholds
 
-## 10) Seguridad y secretos
+## 11) Seguridad y secretos
 - Secrets solo en **variables de entorno/secret store** (nunca en repo).
 - **Principio de mínimo privilegio** para tokens/Scopes (Slack/Jira/Google/MSFT).
 - **PII**: redacción en logs, no almacenar tokens/IDs sensibles.
 - **Rotación** periódica de claves y revisión de permisos.
 
-## 11) Proactividad (MVP)
+## 12) Proactividad (MVP)
 - Triggers por **timers** (SLA 48h) y **webhooks** (status de ticket).
 - **Lógica de negocio** separada (aprobaciones/SLA/auditoría) en `core/use-cases/`, reusable desde adapters.
 
-## 12) Contratos y versionado
+## 13) Contratos y versionado
 - **OpenAPI** y **JSON Schemas** viven en repo y se versionan por **SemVer**.
 - Cambios incompatibles → `MAJOR` + nota de ruptura y plan de migración.
 - Antes de implementar: actualizar **specs + tests** y abrir PR de **solo contratos**.
 
-## 13) Flujo Git
+## 14) Flujo Git
 - **Trunk‑based** con ramas cortas: `spec/...`, `feat/...`, `fix/...`, `docs/...`.
 - PRs enlazados a Issue con criterios de aceptación claros.
 - **Prohibido** merge directo a `main`; siempre PR + CI.
 
-## 14) Entregable y despliegue (cuando toque)
+## 15) Entregable y despliegue (cuando toque)
 - **Dockerfile** slim (`node:20-alpine`), `npm ci`, usuario no root, `HEALTHCHECK`.
 - Configuración **12‑factor** vía envs; un artefacto por servicio.
 - **Rollback** simple (tag/imágen previa) y versionado SemVer.
 - **Changelog** (convencional commits) en releases.
 
-## 15) Definition of Done (DoD)
+## 16) Definition of Done (DoD)
 **PR de especificaciones**
 - OpenAPI/JSON Schemas actualizados y validados (con ejemplos).
 - Contract tests en verde.
@@ -236,78 +274,8 @@ El MVP inicia con un **hola mundo Slack ↔ Mastra** y escalará gradualmente ha
 - `typecheck + lint + tests` pasan con cobertura ≥ thresholds.
 - Manejo de errores tipado y logs estructurados con correlationId.
 - Sin secretos en texto plano; configuración validada con Zod.
+- **Context7 compliance**: Documentación oficial verificada para todas las integraciones.
 - Sin deuda técnica "rápida"; TODOs deben tener Issue asociado.
 
-## 16) Gobernanza
-Cambios a esta constitución requieren **PR** etiquetado `constitution`, explicación de impacto y aprobación del **Tech Lead**. Se incrementa la versión según SemVer y se registra la fecha de enmienda."strict": true`, `noImplicitAny`, `noImplicitReturns`.
-- **Linter/formatter**: ESLint + Prettier; imports ordenados; evita funciones > ~50 líneas.
-- **Convenciones**: nombres expresivos, módulos pequeños, funciones puras cuando aplique.
-- **Errores**: centralizar tipos/errores (`src/core/errors`) y respuestas coherentes.
-- **Configuración tipada**: validar `.env` con **Zod** en `infra/config`, fail‑fast si falta algo.
-- **Boundary de dependencias**: `core/` no importa de `adapters/` ni `infra/`.
-- **Commits**: Convencional Commits (`feat:`, `fix:`, `chore:`, `spec:`, `test:`, `docs:`).
-
-## 7) Pruebas y cobertura
-- **Pirámide**: unitarias (rápidas y muchas), integración (focalizadas), E2E (mínimas).
-- **Contract tests**:
-  - OpenAPI válido (parser/validator).
-  - JSON Schemas válidos (AJV) + ejemplos **válidos e inválidos**.
-- **Cobertura mínima**: ≥ 80% en `core/` y `app/`.
-- **Datos de prueba**: builders/fábricas; evitar fixtures frágiles.
-- **Regla de PR**: sin tests en verde **no** se mergea.
-
-## 8) CI/CD y quality gates
-- CI obligatorio en cada PR:
-  - `typecheck` (tsc), `lint`, `test`, **contract tests** (OpenAPI/JSON Schemas).
-  - (Opcional) **Spectral** para lint de OpenAPI; **OSV/`npm audit`** para dependencias.
-- **Branch protection**: bloquea merge sin checks en verde y **≥1 revisor**.
-- **PRs pequeños** (< ~300 LOC netas); dividir si excede.
-- **Plantillas**: usar templates de Issue/PR con checklist (tests, contratos, docs).
-
-## 9) Seguridad y secretos
-- Secrets solo en **variables de entorno/secret store** (nunca en repo).
-- **Principio de mínimo privilegio** para tokens/Scopes (Slack/Jira/Google/MSFT).
-- **PII**: redacción en logs, no almacenar tokens/IDs sensibles.
-- **Rotación** periódica de claves y revisión de permisos.
-
-## 10) Observabilidad y operabilidad
-- **Logging estructurado** (pino) con `requestId/correlationId`.
-- **Métricas básicas**: latencia, tasa de éxito/error, reintentos.
-- **Trazas** (OpenTelemetry) opcional en integraciones críticas.
-- **Rendimiento**:
-  - Respuestas de Slack < **2s** (usar `ack` + respuesta diferida si es necesario).
-  - Reintentos con **backoff** y timeouts razonables.
-
-## 11) Proactividad (MVP)
-- Triggers por **timers** (SLA 48h) y **webhooks** (status de ticket).
-- **Lógica de negocio** separada (aprobaciones/SLA/auditoría) en `app/services`, reusable desde adapters.
-
-## 12) Contratos y versionado
-- **OpenAPI** y **JSON Schemas** viven en repo y se versionan por **SemVer**.
-- Cambios incompatibles → `MAJOR` + nota de ruptura y plan de migración.
-- Antes de implementar: actualizar **specs + tests** y abrir PR de **solo contratos**.
-
-## 13) Flujo Git
-- **Trunk‑based** con ramas cortas: `spec/...`, `feat/...`, `fix/...`, `docs/...`.
-- PRs enlazados a Issue con criterios de aceptación claros.
-- **Prohibido** merge directo a `main`; siempre PR + CI.
-
-## 14) Entregable y despliegue (cuando toque)
-- **Dockerfile** slim (`node:20-alpine`), `npm ci`, usuario no root, `HEALTHCHECK`.
-- Configuración **12‑factor** vía envs; un artefacto por servicio.
-- **Rollback** simple (tag/imágen previa) y versionado SemVer.
-- **Changelog** (convencional commits) en releases.
-
-## 15) Definition of Done (DoD)
-**PR de especificaciones**
-- OpenAPI/JSON Schemas actualizados y validados (con ejemplos).
-- Contract tests en verde.
-- Documentación mínima del cambio.
-
-**PR de implementación**
-- Respeta contratos; `typecheck + lint + tests` pasan.
-- Manejo de errores y logs adecuados; sin secretos en texto plano.
-- Sin deuda técnica “rápida”; TODOs deben tener Issue asociado.
-
-## 16) Gobernanza
-Cambios a esta constitución requieren **PR** etiquetado `constitution`, explicación de impacto y aprobación del **Tech Lead**. Se incrementa la versión y se registra la fecha de enmienda.
+## 17) Gobernanza
+Cambios a esta constitución requieren **PR** etiquetado `constitution`, explicación de impacto y aprobación del **Tech Lead**. Se incrementa la versión según SemVer y se registra la fecha de enmienda.
