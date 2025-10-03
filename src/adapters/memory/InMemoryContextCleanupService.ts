@@ -1,6 +1,6 @@
+import type { ContextId, ConversationContext } from '../../core/entities/ConversationContext.js';
 import type { ContextCleanupService } from '../../core/ports/ContextCleanupService.js';
 import type { ConversationRepository } from '../../core/ports/ConversationRepository.js';
-import type { ConversationContext, ContextId } from '../../core/entities/ConversationContext.js';
 
 export class InMemoryContextCleanupService implements ContextCleanupService {
   constructor(
