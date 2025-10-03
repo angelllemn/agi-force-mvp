@@ -1,0 +1,445 @@
+openapi: 3.0.3
+info:
+  title: AGI Force Context API
+  description: API para gestión de contexto conversacional persistente
+  version: 1.0.0
+  contact:
+    name: AGI Force Team
+    
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+    
+paths:
+  /context:
+    post:
+      summary: Crear nuevo contexto conversacional
+      description: Crea un nuevo contexto para un usuario o grupo
+      operationId: createContext
+      tags:
+        - Context Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContextRequest'
+      responses:
+        '201':
+          description: Contexto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationContext'
+        '400':
+          description: Solicitud inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Contexto ya existe para estos participantes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Buscar contexto conversacional
+      description: Recupera contexto existente basado en participantes y tipo
+      operationId: findContext
+      tags:
+        - Context Management
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ContextType'
+        - name: participants
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+            minItems: 1
+          style: form
+          explode: false
+        - name: includeExpired
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Contexto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationHistory'
+        '404':
+          description: Contexto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /context/{contextId}/messages:
+    post:
+      summary: Agregar mensaje al contexto
+      description: Añade un nuevo mensaje a un contexto existente
+      operationId: addMessage
+      tags:
+        - Message Management
+      parameters:
+        - name: contextId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMessageRequest'
+      responses:
+        '201':
+          description: Mensaje agregado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Solicitud inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Contexto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Recuperar mensajes del contexto
+      description: Obtiene mensajes de un contexto con filtros opcionales
+      operationId: getMessages
+      tags:
+        - Message Management
+      parameters:
+        - name: contextId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Lista de mensajes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageList'
+        '404':
+          description: Contexto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /context/{contextId}:
+    delete:
+      summary: Eliminar contexto
+      description: Marca un contexto para eliminación (soft delete)
+      operationId: deleteContext
+      tags:
+        - Context Management
+      parameters:
+        - name: contextId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Contexto marcado para eliminación
+        '404':
+          description: Contexto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /context/cleanup:
+    post:
+      summary: Ejecutar limpieza de contextos
+      description: Operación administrativa para limpiar contextos expirados
+      operationId: cleanupExpiredContexts
+      tags:
+        - Administrative
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: Limpieza ejecutada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CleanupResult'
+        '403':
+          description: Acceso denegado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ContextType:
+      type: string
+      enum: [user, group]
+      description: Tipo de contexto conversacional
+
+    ConversationContext:
+      type: object
+      required:
+        - id
+        - type
+        - participants
+        - createdAt
+        - updatedAt
+        - expiresAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del contexto
+        type:
+          $ref: '#/components/schemas/ContextType'
+        participants:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: Lista de participantes (Slack user/channel IDs)
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación del contexto
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+        expiresAt:
+          type: string
+          format: date-time
+          description: Fecha de expiración del contexto
+
+    Message:
+      type: object
+      required:
+        - id
+        - contextId
+        - sender
+        - content
+        - timestamp
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del mensaje
+        contextId:
+          type: string
+          format: uuid
+          description: ID del contexto al que pertenece
+        sender:
+          type: string
+          description: ID del remitente (Slack user ID)
+        content:
+          type: string
+          maxLength: 4000
+          description: Contenido del mensaje
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp original del mensaje
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de almacenamiento en la BD
+
+    ConversationHistory:
+      type: object
+      required:
+        - context
+        - messages
+        - messageCount
+        - lastActivity
+      properties:
+        context:
+          $ref: '#/components/schemas/ConversationContext'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        messageCount:
+          type: integer
+          minimum: 0
+          description: Número total de mensajes en el contexto
+        lastActivity:
+          type: string
+          format: date-time
+          description: Timestamp de la última actividad
+
+    CreateContextRequest:
+      type: object
+      required:
+        - type
+        - participants
+      properties:
+        type:
+          $ref: '#/components/schemas/ContextType'
+        participants:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: Lista de participantes
+
+    AddMessageRequest:
+      type: object
+      required:
+        - sender
+        - content
+        - timestamp
+      properties:
+        sender:
+          type: string
+          description: ID del remitente
+        content:
+          type: string
+          maxLength: 4000
+          minLength: 1
+          description: Contenido del mensaje
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp original del mensaje
+
+    MessageList:
+      type: object
+      required:
+        - messages
+        - total
+        - limit
+        - offset
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        total:
+          type: integer
+          minimum: 0
+          description: Número total de mensajes disponibles
+        limit:
+          type: integer
+          minimum: 1
+          description: Límite aplicado en la consulta
+        offset:
+          type: integer
+          minimum: 0
+          description: Offset aplicado en la consulta
+
+    CleanupResult:
+      type: object
+      required:
+        - deletedContexts
+        - notifiedContexts
+        - executionTime
+      properties:
+        deletedContexts:
+          type: integer
+          minimum: 0
+          description: Número de contextos eliminados
+        notifiedContexts:
+          type: integer
+          minimum: 0
+          description: Número de contextos notificados por expiración
+        executionTime:
+          type: number
+          description: Tiempo de ejecución en milisegundos
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Código de error
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        details:
+          type: object
+          description: Detalles adicionales del error
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp del error
+        correlationId:
+          type: string
+          description: ID de correlación para debugging
+
+  securitySchemes:
+    AdminAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT para operaciones administrativas
+
+tags:
+  - name: Context Management
+    description: Operaciones de gestión de contexto conversacional
+  - name: Message Management
+    description: Operaciones de gestión de mensajes
+  - name: Administrative
+    description: Operaciones administrativas del sistema
