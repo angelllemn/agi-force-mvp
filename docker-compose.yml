@@ -1,6 +1,5 @@
 # Docker Compose para AGI Force MVP
 # Orquesta el entorno completo de desarrollo
-version: '3.8'
 
 services:
   # Base de datos PostgreSQL 16
