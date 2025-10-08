@@ -12,33 +12,29 @@ Este documento traduce los principios constitucionales en **especificaciones con
 ## 1. 💬 Contexto Persistente (MVP)
 
 ### Descripción
-
 El bot debe mantener un historial de conversación para usuarios individuales y grupos, permitiendo responder con contexto apropiado.
 
 ### Criterios de Aceptación
-
 - ✅ **Contexto por usuario**: Mantener historial individual en DMs
 - ✅ **Contexto grupal**: Preservar contexto en canales/hilos
 - ✅ **Caducidad configurable**: TTL del contexto por configuración
 - ✅ **Isolación**: Contextos separados entre usuarios/grupos
 
 ### Estrategia de Testing
-
 ```typescript
 // Ejemplo de test unitario
-describe("ContextManager", () => {
-  it("should maintain separate context for different users", () => {
+describe('ContextManager', () => {
+  it('should maintain separate context for different users', () => {
     // Test implementation
   });
-
-  it("should expire context after configured TTL", () => {
-    // Test implementation
+  
+  it('should expire context after configured TTL', () => {
+    // Test implementation  
   });
 });
 ```
 
 ### Checklist Técnico
-
 - [ ] Implementar `ContextRepository` en `core/ports/`
 - [ ] Crear adapter de persistencia en `infra/persistence/`
 - [ ] Tests unitarios para escenarios multiusuario
@@ -49,21 +45,18 @@ describe("ContextManager", () => {
 ## 2. ⚡ Capabilities y Acciones
 
 ### Descripción
-
 El bot debe ejecutar acciones específicas mediante capacidades predefinidas, siguiendo el patrón hexagonal.
 
 ### Capabilities Requeridas
-
 - 🎫 **Tickets**: Crear/actualizar en Jira/Linear
 - 🔍 **Knowledge Base**: Búsquedas RAG/KB
 - 📧 **Notificaciones**: Slack/Email
 
 ### Arquitectura Hexagonal
-
 ```
 core/ports/
 ├── TicketRepository.ts      # Gestión de tickets
-├── KnowledgeSearch.ts       # Búsqueda KB/RAG
+├── KnowledgeSearch.ts       # Búsqueda KB/RAG  
 ├── Notifier.ts             # Notificaciones
 ├── AgentClient.ts          # Comunicación Mastra
 └── Scheduler.ts            # Tareas programadas
@@ -78,10 +71,9 @@ adapters/
 ```
 
 ### Checklist Técnico
-
 - [ ] **Interfaces definidas** en `core/ports/`
   - [ ] `TicketRepository.ts`
-  - [ ] `KnowledgeSearch.ts`
+  - [ ] `KnowledgeSearch.ts` 
   - [ ] `Notifier.ts`
   - [ ] `AgentClient.ts`
   - [ ] `Scheduler.ts`
@@ -100,17 +92,14 @@ adapters/
 ## 3. 🔔 Proactividad
 
 ### Descripción
-
 Implementar lógica para que el bot envíe recordatorios y avisos automáticamente basados en triggers temporales y eventos.
 
 ### Tipos de Proactividad
-
 - ⏰ **Timers**: SLA de 48h para tickets
 - 🔗 **Webhooks**: Cambios de estado en sistemas externos
 - 📅 **Scheduled**: Recordatorios programados
 
 ### Arquitectura
-
 ```typescript
 // core/use-cases/ProactiveNotifier.ts
 interface ProactiveNotifier {
@@ -126,7 +115,6 @@ interface SchedulerAdapter {
 ```
 
 ### Checklist Técnico
-
 - [ ] **Core Logic**
   - [ ] `Scheduler` interface en `core/ports/`
   - [ ] `ProactiveNotifier` use case en `core/use-cases/`
@@ -144,22 +132,19 @@ interface SchedulerAdapter {
 ## 4. 🏗️ Arquitectura Hexagonal (Clean Architecture)
 
 ### Descripción
-
 Seguir arquitectura hexagonal estricta como base del diseño del sistema, garantizando testabilidad y mantenibilidad.
 
 ### Principios Arquitectónicos
-
 - 🎯 **Core puro**: Sin dependencias externas
 - 🔌 **Ports & Adapters**: Interfaces claras
 - 📦 **Dependency Inversion**: Core no depende de detalles
 
 ### Estructura Obligatoria
-
 ```
 src/
 ├── core/                    # ❌ NO external dependencies
 │   ├── entities/           # Domain entities
-│   ├── value-objects/      # Value objects
+│   ├── value-objects/      # Value objects  
 │   ├── use-cases/         # Business logic
 │   ├── ports/             # Interfaces (REQUIRED)
 │   └── errors/            # Domain errors
@@ -174,7 +159,6 @@ src/
 ```
 
 ### Checklist Técnico
-
 - [ ] **Boundary Enforcement**
   - [ ] `core/` sin imports de `adapters/` o `infra/`
   - [ ] ESLint rules para dependency boundaries
@@ -193,17 +177,14 @@ src/
 ## 5. 📋 Contratos y Validación (Spec-Driven Development)
 
 ### Descripción
-
 Todo desarrollo debe partir de especificaciones formales usando OpenAPI y JSON Schema, con validación automática.
 
 ### Flujo SDD Obligatorio
-
 1. **Specs primero** → OpenAPI + JSON Schema
 2. **Tests después** → Contract tests que fallan
 3. **Implementación final** → Hacer tests verdes
 
 ### Estructura de Contratos
-
 ```
 /openapi/                   # Endpoints propios
 ├── pulsedesk-api.yaml     # API principal
@@ -216,7 +197,6 @@ Todo desarrollo debe partir de especificaciones formales usando OpenAPI y JSON S
 ```
 
 ### Checklist Técnico
-
 - [ ] **Especificaciones**
   - [ ] OpenAPI specs en `/openapi/`
   - [ ] JSON Schemas en `/schemas/capabilities/`
@@ -235,11 +215,9 @@ Todo desarrollo debe partir de especificaciones formales usando OpenAPI y JSON S
 ## 6. 🔧 Estandarización del Código
 
 ### Descripción
-
 Garantizar calidad de código mediante reglas estrictas y herramientas automáticas.
 
 ### Configuración Obligatoria
-
 ```json
 // tsconfig.json
 {
@@ -254,14 +232,12 @@ Garantizar calidad de código mediante reglas estrictas y herramientas automáti
 ```
 
 ### Standards Aplicados
-
 - 📏 **TypeScript**: Strict mode sin excepciones
 - 🎨 **Formatting**: ESLint + Prettier automático
 - 🧪 **Coverage**: ≥90% core/, ≥80% adapters/
 - 🚫 **Error Handling**: Result/Either patterns
 
 ### Checklist Técnico
-
 - [ ] **TypeScript Strict**
   - [ ] `strict: true` configurado
   - [ ] Boundary enforcement rules
@@ -284,34 +260,27 @@ Garantizar calidad de código mediante reglas estrictas y herramientas automáti
 ## 7. 📊 Observabilidad
 
 ### Descripción
-
 Implementar logging estructurado, métricas básicas y correlation tracking para debugging y monitoring.
 
 ### Componentes de Observabilidad
-
 - 📝 **Structured Logging**: Pino con JSON format
 - 🔗 **Correlation IDs**: Request tracking
 - 📈 **Basic Metrics**: Latency, success/error rates
 - 🔍 **Optional Tracing**: OpenTelemetry para críticos
 
 ### Logging Strategy
-
 ```typescript
 // Structured logging example
-logger.info(
-  {
-    correlationId: req.correlationId,
-    operation: "ticket.create",
-    userId: req.user.id,
-    duration: Date.now() - startTime,
-    success: true,
-  },
-  "Ticket created successfully"
-);
+logger.info({
+  correlationId: req.correlationId,
+  operation: 'ticket.create',
+  userId: req.user.id,
+  duration: Date.now() - startTime,
+  success: true
+}, 'Ticket created successfully');
 ```
 
 ### Checklist Técnico
-
 - [ ] **Structured Logging**
   - [ ] Pino configurado con JSON output
   - [ ] Correlation IDs en TODAS las operations
@@ -319,7 +288,7 @@ logger.info(
   - [ ] No PII en logs
 - [ ] **Metrics Collection**
   - [ ] Response time tracking
-  - [ ] Success/error rate counters
+  - [ ] Success/error rate counters  
   - [ ] Retry attempt logging
   - [ ] External API latency
 - [ ] **Testing Observability**
@@ -332,31 +301,27 @@ logger.info(
 ## 8. 🚀 CI/CD y Calidad
 
 ### Descripción
-
 Automatizar validación de calidad en cada PR con gates estrictos y feedback rápido.
 
 ### Pipeline Obligatorio
-
 ```yaml
 # CI Pipeline stages
 stages:
-  - lint # ESLint + Prettier
-  - typecheck # tsc --noEmit
-  - test:unit # Jest unit tests
+  - lint          # ESLint + Prettier
+  - typecheck     # tsc --noEmit  
+  - test:unit     # Jest unit tests
   - test:integration # Integration tests
-  - test:contract # OpenAPI/Schema validation
-  - audit # npm audit + OSV
+  - test:contract    # OpenAPI/Schema validation
+  - audit         # npm audit + OSV
 ```
 
 ### Quality Gates
-
 - 🚦 **Coverage**: ≥90% core/, ≥80% adapters/
 - 🔒 **Branch Protection**: PR reviews required
 - ✅ **All Green**: No merge con tests fallando
 - 📏 **Size Limit**: <300 LOC netas por PR
 
 ### Checklist Técnico
-
 - [ ] **CI Configuration**
   - [ ] All pipeline stages configured
   - [ ] Coverage reporting automático
@@ -375,18 +340,15 @@ stages:
 ## 9. 🔐 Seguridad
 
 ### Descripción
-
 Asegurar que el código y las integraciones cumplen con principios básicos de seguridad y privacidad.
 
 ### Principios de Seguridad
-
 - 🔑 **Secrets Management**: Solo env vars/secret stores
 - 🎯 **Least Privilege**: Scopes mínimos en tokens
 - 🙈 **PII Redaction**: No datos sensibles en logs
 - 🔄 **Key Rotation**: Periodic credential refresh
 
 ### Security Checklist
-
 - [ ] **Secrets Handling**
   - [ ] No hardcoded secrets en código
   - [ ] Environment variables validation
@@ -409,18 +371,15 @@ Asegurar que el código y las integraciones cumplen con principios básicos de s
 ## 10. ✅ Definition of Done (DoD)
 
 ### Descripción
-
 Criterios claros y no negociables para considerar completo cualquier trabajo de desarrollo.
 
 ### DoD para PR de Especificaciones
-
 - [ ] **OpenAPI** actualizado y válido
 - [ ] **JSON Schemas** con ejemplos válidos/inválidos
 - [ ] **Contract tests** implementados y verdes
 - [ ] **Documentación** mínima del cambio
 
-### DoD para PR de Implementación
-
+### DoD para PR de Implementación  
 - [ ] **CI Pipeline** completamente verde
   - [ ] TypeScript typecheck pasa
   - [ ] ESLint sin warnings
@@ -441,7 +400,6 @@ Criterios claros y no negociables para considerar completo cualquier trabajo de 
   - [ ] README updated si hay cambios de setup
 
 ### Validation Checklist
-
 - [ ] **Functional**: Feature works como especificado
 - [ ] **Technical**: Cumple standards de calidad
 - [ ] **Security**: No vulnerabilities introducidas
@@ -453,15 +411,13 @@ Criterios claros y no negociables para considerar completo cualquier trabajo de 
 ## 📝 Notas de Implementación
 
 ### Priorización Sugerida
-
 1. **P0**: Architecture setup + Core interfaces
-2. **P1**: Basic Slack ↔ Mastra integration
+2. **P1**: Basic Slack ↔ Mastra integration  
 3. **P2**: Persistence + Context management
 4. **P3**: Capabilities (Tickets, KB, Notifications)
 5. **P4**: Proactivity + Advanced features
 
 ### Tracking Progress
-
 - Usar este documento como checklist durante development
 - Crear issues específicos para cada specification
 - Link PRs a specifications correspondientes

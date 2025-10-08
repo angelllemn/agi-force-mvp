@@ -1,6 +1,5 @@
 # Docker Compose para AGI Force MVP
 # Orquesta el entorno completo de desarrollo
-version: "3.8"
 
 services:
   # Base de datos PostgreSQL 16
@@ -43,10 +42,10 @@ services:
       DB_SSL: "false"
     ports:
       - "3000:3000"
-      - "9229:9229" # Puerto para debugging
+      - "9229:9229"  # Puerto para debugging
     volumes:
       - .:/app
-      - /app/node_modules # Evitar sobrescribir node_modules
+      - /app/node_modules  # Evitar sobrescribir node_modules
       - npm_cache:/home/agi/.npm
     networks:
       - agi-network
@@ -55,9 +54,45 @@ services:
         condition: service_healthy
     command: npm run dev
 
+  # Redis para cache (opcional, para futuras mejoras)
+  redis:
+    image: redis:7-alpine
+    container_name: agi-force-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - agi-network
+    command: redis-server --appendonly yes
+
+  # pgAdmin para administración de base de datos (desarrollo)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: agi-force-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@agiforce.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
+    networks:
+      - agi-network
+    depends_on:
+      - postgres
+
 # Volúmenes persistentes
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
     driver: local
   npm_cache:
     driver: local
