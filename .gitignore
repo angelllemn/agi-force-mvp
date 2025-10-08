@@ -7,3 +7,6 @@ dist
 *.db
 *.db-*
 tmp
+
+# mastra
+.mastra/

@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContextType {
+  user
+  group
+}
+
+model ConversationContext {
+  id           String               @id @default(uuid())
+  type         ContextType
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  expiresAt    DateTime
+  deletedAt    DateTime?
+
+  messages     ConversationMessage[]
+  participants ContextParticipant[]
+
+  @@index([type])
+  @@index([expiresAt])
+}
+
+model ContextParticipant {
+  id         String               @id @default(uuid())
+  contextId  String
+  participant String
+
+  context    ConversationContext  @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  @@unique([contextId, participant])
+  @@index([participant])
+}
+
+model ConversationMessage {
+  id        String              @id @default(uuid())
+  contextId String
+  sender    String
+  content   String
+  timestamp DateTime
+  createdAt DateTime            @default(now())
+
+  context   ConversationContext @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  @@index([contextId, timestamp])
+}
