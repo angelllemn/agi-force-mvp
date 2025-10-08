@@ -1,10 +1,14 @@
 // @ts-ignore
 import pkg from '@slack/bolt';
 import { validateEnv } from '../../infra/config/env.js';
+import type { AppContainer } from '../../infra/container/index.js';
+import { createAppContainer } from '../../infra/container/index.js';
 import { MastraAgentResponse } from '../../types/mastra-api.js';
 const { App } = pkg;
 
 const env = validateEnv();
+const container = createAppContainer({ env });
+const slackContextIntegration = container.resolveSlackContextIntegration();
 
 export const slackApp = new App({
   token: env.SLACK_BOT_TOKEN,
@@ -111,16 +115,25 @@ async function generateMastraReply(prompt: string): Promise<string> {
   return data.steps[0].text ? data.steps[0].text : 'Lo siento, no pude generar una respuesta.';
 }
 
+type SlackMessageContext = {
+  user: string;
+  channel: string;
+  channelType: 'im' | 'channel' | 'group';
+  ts: string;
+};
+
 async function respondToUserPrompt({
   rawText,
   say,
   botUserId,
   threadTs,
+  messageContext,
 }: {
   rawText: string | undefined;
   say: any; // Tipo any para manejar SayFn correctamente
   botUserId?: string;
   threadTs?: string;
+  messageContext: SlackMessageContext;
 }) {
   const cleanText = stripBotMention(rawText, botUserId);
 
@@ -130,8 +143,31 @@ async function respondToUserPrompt({
   }
 
   try {
+    await slackContextIntegration.processMessage({
+      user: messageContext.user,
+      text: cleanText,
+      channel: messageContext.channel,
+      channelType: messageContext.channelType,
+      ts: messageContext.ts,
+    });
+  } catch (error) {
+    console.error('❌ Error storing Slack message context:', error);
+  }
+
+  try {
     const replyText = await generateMastraReply(cleanText);
     await say({ text: replyText, thread_ts: threadTs });
+
+    try {
+      await slackContextIntegration.addBotResponse(
+        messageContext.channel,
+        messageContext.channelType,
+        messageContext.user,
+        replyText
+      );
+    } catch (error) {
+      console.error('❌ Error storing bot response in context:', error);
+    }
   } catch (error) {
     console.error('❌ Error calling Mastra:', error);
     await say({
@@ -144,11 +180,18 @@ async function respondToUserPrompt({
 // Listen for app mentions in channels and groups
 slackApp.event('app_mention', async ({ event, say, context }) => {
   console.log('📩 Received app mention:', { channel: event.channel, user: event.user, text: event.text });
+  const channelType = ((event as any).channel_type ?? 'channel') as SlackMessageContext['channelType'];
   await respondToUserPrompt({
     rawText: event.text,
     say,
     botUserId: context.botUserId,
     threadTs: event.thread_ts ?? event.ts,
+    messageContext: {
+      user: event.user ?? 'unknown',
+      channel: event.channel,
+      channelType,
+      ts: event.ts,
+    },
   });
 });
 
@@ -173,10 +216,16 @@ slackApp.message(async ({ message, say, context, event }) => {
     say,
     botUserId: context.botUserId,
     threadTs,
+    messageContext: {
+      user: message.user ?? 'unknown',
+      channel: dmMessage.channel,
+      channelType: 'im',
+      ts: dmMessage.ts,
+    },
   });
 });
 
-export async function startSlackBridge() {
+export async function startSlackBridge(): Promise<AppContainer> {
   console.log('🚀 Starting Slack bridge...');
 
   try {
@@ -207,6 +256,7 @@ export async function startSlackBridge() {
       await performHealthCheck();
     }, 5 * 60 * 1000);
 
+    return container;
   } catch (error) {
     console.error('❌ Failed to start Slack bridge:', error);
 
@@ -217,7 +267,11 @@ export async function startSlackBridge() {
     console.error('   • Check that Socket Mode is enabled in your Slack app');
     console.error('   • Ensure the app is installed in your workspace');
     console.error('   • Verify network connectivity');
-
-    process.exit(1);
+    try {
+      await container.dispose();
+    } catch (disposeError) {
+      console.error('⚠️ Error disposing container after failure:', disposeError);
+    }
+    throw error;
   }
 }

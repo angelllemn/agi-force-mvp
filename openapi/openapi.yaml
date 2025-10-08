@@ -12,7 +12,7 @@ paths:
     get:
       summary: Estado del servicio
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -28,7 +28,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SlackDispatchRequest'
+              $ref: "#/components/schemas/SlackDispatchRequest"
             examples:
               ejemplo:
                 value:
@@ -37,12 +37,12 @@ paths:
                   text: "hola"
                   threadTs: "1730392345.000100"
       responses:
-        '200':
+        "200":
           description: Respuesta del agente (mínima)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SlackDispatchResponse'
+                $ref: "#/components/schemas/SlackDispatchResponse"
 components:
   schemas:
     SlackDispatchRequest:

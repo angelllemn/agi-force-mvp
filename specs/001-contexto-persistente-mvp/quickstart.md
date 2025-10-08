@@ -1,69 +1,88 @@
 # Quickstart: Contexto Persistente (MVP)
 
 **Feature**: Sistema de contexto conversacional persistente para AGI Force bot
-**Última actualización**: 2024-12-22
+**Última actualización**: 2025-10-08
 
 ## 📋 Prerrequisitos
 
 ### Software requerido
-- **Node.js** v20+ 
+
+- **Node.js** v20+
 - **npm** v10+
 - **Docker** y **Docker Compose** (para base de datos)
 - **Git** (para control de versiones)
+- **Prisma CLI** (`npx prisma`) instalado vía `npm install -D prisma` (se ejecuta automáticamente al instalar dependencias)
 
 ### Verificación del entorno
+
 ```bash
 node --version    # Debe ser v20.x.x o superior
-npm --version     # Debe ser v10.x.x o superior  
+npm --version     # Debe ser v10.x.x o superior
 docker --version  # Cualquier versión reciente
 ```
 
 ## 🚀 Instalación y configuración
 
 ### 1. Clonar y configurar el proyecto
+
 ```bash
 # Clonar el repositorio
 git clone https://github.com/angelllemn/agi-force-mvp.git
 cd agi-force-mvp
 
-# Cambiar a la rama de desarrollo
-git checkout 001-contexto-persistente-mvp
-
-# Instalar dependencias
+# Instalar dependencias (incluye Prisma CLI y cliente)
 npm install
 ```
 
 ### 2. Configuración de base de datos
 
 #### Opción A: PostgreSQL con Docker (Recomendado)
+
 ```bash
 # Iniciar PostgreSQL con Docker Compose
-docker-compose up -d postgres
+docker compose up -d postgres
 
 # Verificar que está corriendo
 docker ps | grep postgres
 ```
 
 #### Opción B: SQLite para desarrollo local
+
 ```bash
 # No requiere configuración adicional
-# SQLite se creará automáticamente en ./data/context.db
+# Prisma generará context.db en ./data/context.db al aplicar migraciones
 ```
 
 ### 3. Variables de entorno
+
 ```bash
 # Copiar template de configuración
-cp .env.example .env.local
+cp .env.example .env
+
+# Opcional: perfiles locales o de test
+cp .env.example .env.local    # Sobrescribe valores para tu máquina
+cp .env.example .env.test     # Variables específicas para suites de pruebas
 
 # Editar configuración (usar tu editor preferido)
-nano .env.local
+nano .env
 ```
 
 **Configuración mínima requerida**:
+
 ```env
-# Base de datos
-DATABASE_URL=postgresql://context_user:context_pass@localhost:5432/context_db
-# O para SQLite: DATABASE_URL=sqlite:./data/context.db
+# Driver de persistencia disponible: memory | postgres | sqlite
+PERSISTENCE_DRIVER=postgres
+
+# Base de datos (PostgreSQL por defecto)
+DATABASE_URL=postgresql://agi_user:agi_pass@localhost:5432/agi_force_mvp
+# O para SQLite (modo offline)
+# PERSISTENCE_DRIVER=sqlite
+# DATABASE_URL=file:./data/context.db
+
+# URL dedicada para pruebas automatizadas (opcional)
+# TEST_DATABASE_URL=postgresql://agi_test:agi_test@localhost:5433/agi_force_mvp_test
+
+PRISMA_LOG_LEVEL=error
 
 # Slack integration
 SLACK_BOT_TOKEN=xoxb-your-bot-token
@@ -71,8 +90,8 @@ SLACK_APP_TOKEN=xapp-your-app-token
 SLACK_SIGNING_SECRET=your-signing-secret
 
 # Mastra configuration
-MASTRA_API_URL=http://localhost:8000
-MASTRA_API_KEY=your-mastra-key
+MASTRA_BASE_URL=http://localhost:4111
+MASTRA_AGENT_ID=pulseDeskAgent
 
 # Logging
 LOG_LEVEL=info
@@ -82,9 +101,11 @@ NODE_ENV=development
 ## 🏃‍♂️ Ejecución
 
 ### Desarrollo local
+
 ```bash
-# Ejecutar migraciones de base de datos
-npm run db:migrate
+# Aplicar migraciones Prisma (genera base de datos y cliente)
+npm run db:migrate:dev
+npm run db:generate
 
 # Iniciar en modo desarrollo
 npm run dev
@@ -94,47 +115,49 @@ npm run dev:slack
 ```
 
 ### Verificación de funcionamiento
-```bash
-# Verificar que los servicios responden
-curl http://localhost:3000/health
-curl http://localhost:3000/api/v1/context/health
 
-# Verificar conexión a base de datos
-npm run db:status
+```bash
+# Verificar que el servicio responde
+curl http://localhost:3000/health || true
+
+# Verificar conexión a base de datos (Prisma)
+npm run db:generate && echo "Prisma puede conectar"
 ```
 
 ## 🧪 Testing
 
 ### Ejecutar todas las pruebas
+
 ```bash
-# Tests unitarios
-npm run test:unit
+# Suite completa (Vitest)
+npm test
 
-# Tests de integración
-npm run test:integration
+# Vitest levanta automáticamente PostgreSQL vía Testcontainers (requiere Docker)
 
-# Tests de contratos (OpenAPI)
-npm run test:contract
+# Escenarios Spec Kit (Gherkin)
+npm run spec:check
 
-# Coverage completo
-npm run test:coverage
+# Ejecutar un archivo específico
+npm test -- tests/integration/user-context.test.ts
 ```
 
 ### Tests específicos para contexto persistente
+
 ```bash
-# Solo tests de contexto
-npm run test -- --testPathPattern=context
+# Filtrar por entidad o caso de uso
+npm test -- --grep "ConversationContext"
 
-# Tests de repository
-npm run test -- --testPathPattern=repository
+# Ejecutar escenarios Spec Kit de DM
+npm run spec:check -- --tags @dm
 
-# Tests de casos de uso
-npm run test -- --testPathPattern=use-case
+# Ejecutar pruebas de contrato
+npm test -- tests/specs.test.ts
 ```
 
 ## 🔧 Desarrollo
 
 ### Estructura del proyecto (contexto persistente)
+
 ```
 src/
 ├── core/
@@ -158,75 +181,54 @@ src/
 │   └── slack/
 │       └── SlackContextIntegration.ts
 └── infra/
-    ├── config/
-    │   └── database.ts
-    ├── persistence/
-    │   ├── migrations/
-    │   └── connection.ts
-    └── logging/
-        └── context-logger.ts
+  ├── config/
+  │   └── env.ts
+  └── mastra/
+    └── ... (agentes, herramientas, workflows)
+
+prisma/
+├── migrations/
+└── schema.prisma
 ```
 
 ### Comandos útiles para desarrollo
+
 ```bash
-# Regenerar tipos de base de datos
-npm run db:generate-types
+# Aplicar migración nueva
+npm run db:migrate:dev -- --name <descripcion>
 
-# Reset completo de base de datos
-npm run db:reset
+# Generar cliente Prisma sin migrar
+npm run db:generate
 
-# Verificar cumplimiento constitucional
-npm run constitution:check
+# Inspeccionar base de datos (PostgreSQL)
+npm run db:studio
 
-# Linting y formato
-npm run lint
-npm run format
-
-# Build para producción
+# Build para producción (Mastra)
 npm run build
 ```
 
 ## 🐛 Debugging
 
-### Logs estructurados
-```bash
-# Ver logs en tiempo real
-npm run logs:follow
-
-# Filtrar logs por correlationId
-npm run logs:correlation <correlation-id>
-
-# Ver logs de contexto específicamente
-npm run logs:context
-```
-
 ### Debugging de base de datos
+
 ```bash
-# Conectar a PostgreSQL directamente
-docker exec -it agi-force-postgres psql -U context_user -d context_db
+# Conectar a PostgreSQL directamente (requiere psql)
+docker exec -it agi-force-mvp_devcontainer-postgres-1 psql -U agi_user -d agi_force_mvp
 
-# Ver esquema actual
-npm run db:schema
+# Revisar contexto almacenado
+SELECT c.id, c.type, c.expires_at, array_agg(p.participant) AS participants
+FROM "ConversationContext" c
+LEFT JOIN "ContextParticipant" p ON p."contextId" = c.id
+GROUP BY c.id, c.type, c.expires_at;
 
-# Ejecutar query específico
-npm run db:query "SELECT * FROM conversation_contexts LIMIT 5;"
-```
-
-### Debugging de integración Slack
-```bash
-# Verificar webhook de Slack
-npm run slack:verify-webhook
-
-# Test de respuesta del bot
-npm run slack:test-response
-
-# Ver eventos de Slack en tiempo real
-npm run slack:events:follow
+# Revisar mensajes recientes
+SELECT sender, content, timestamp FROM "ConversationMessage" ORDER BY timestamp DESC LIMIT 10;
 ```
 
 ## 📚 Casos de uso comunes
 
 ### 1. Crear contexto para usuario
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/context \
   -H "Content-Type: application/json" \
@@ -237,6 +239,7 @@ curl -X POST http://localhost:3000/api/v1/context \
 ```
 
 ### 2. Agregar mensaje al contexto
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/context/{contextId}/messages \
   -H "Content-Type: application/json" \
@@ -248,6 +251,7 @@ curl -X POST http://localhost:3000/api/v1/context/{contextId}/messages \
 ```
 
 ### 3. Recuperar historial de conversación
+
 ```bash
 curl "http://localhost:3000/api/v1/context?type=user&participants=U1234567890"
 ```
@@ -257,53 +261,46 @@ curl "http://localhost:3000/api/v1/context?type=user&participants=U1234567890"
 ### Problemas comunes
 
 #### Error de conexión a base de datos
+
 ```bash
 # Verificar que PostgreSQL está corriendo
-docker ps | grep postgres
+docker ps | grep agi-force-postgres
 
 # Verificar conectividad
-npm run db:ping
+npx prisma db pull --force
 
 # Recrear base de datos
-docker-compose down postgres
-docker-compose up -d postgres
-npm run db:migrate
-```
-
-#### Bot no responde en Slack
-```bash
-# Verificar configuración de Slack
-npm run slack:verify-config
-
-# Revisar logs de Slack adapter
-npm run logs:slack
-
-# Test de conectividad con Mastra
-npm run mastra:health
+docker compose down postgres
+docker compose up -d postgres
+npx prisma migrate reset
 ```
 
 #### Tests fallan
+
 ```bash
-# Limpiar cache de Jest
-npm run test:clear-cache
+# Ejecutar Vitest en modo interactivo
+npm test -- --watch
 
-# Ejecutar tests con verbose
-npm run test -- --verbose
+# Con logs detallados
+npm test -- --reporter verbose
 
-# Ejecutar solo tests que fallan
-npm run test -- --onlyFailures
+# Repetir solo escenarios Spec Kit fallidos
+npm run spec:check -- --last-failed
 ```
 
 ## 📖 Documentación adicional
 
 ### Links útiles
+
 - [Especificación completa](./spec.md)
 - [Plan de implementación](./plan.md)
 - [Modelo de datos](./data-model.md)
 - [API Contracts](./contracts/)
+- [Contexto de investigación](./research.md)
 - [Constitución del proyecto](../../.specify/memory/constitution.md)
 
 ### Recursos externos
+
 - [Documentación de Mastra Framework](https://docs.mastra.ai)
 - [Slack Bolt.js Documentation](https://slack.dev/bolt-js)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
@@ -311,11 +308,13 @@ npm run test -- --onlyFailures
 ## 🆘 Soporte
 
 ### Reportar problemas
+
 1. Revisar [issues existentes](https://github.com/angelllemn/agi-force-mvp/issues)
 2. Crear nuevo issue con template apropiado
 3. Incluir logs relevantes y pasos para reproducir
 
 ### Contacto del equipo
+
 - **Tech Lead**: [Información de contacto]
 - **Slack Channel**: #agi-force-development
 - **Email**: dev-team@agi-force.com

@@ -4,7 +4,9 @@
   "title": "Diagnostics Echo Capability",
   "description": "Capability for echoing text for diagnostic purposes",
   "type": "object",
-  "required": ["text"],
+  "required": [
+    "text"
+  ],
   "properties": {
     "text": {
       "type": "string",
