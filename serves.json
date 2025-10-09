@@ -1,5 +1,20 @@
-{ "mcpServers": {
-    "upstash/context7": {
+{
+	"mcpServers": {
+		"github/github-mcp-server": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/",
+			"gallery": "https://api.mcp.github.com/v0/servers/ab12cd34-5678-90ef-1234-567890abcdef",
+			"version": "0.13.0"
+		},
+		"mastra": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@mastra/mcp-docs-server"
+			],
+			"type": "stdio"
+		},
+		"upstash/context7": {
 			"type": "http",
 			"url": "https://mcp.context7.com/mcp",
 			"headers": {
@@ -7,5 +22,44 @@
 			},
 			"gallery": "https://api.mcp.github.com/v0/servers/dcec7705-b81b-4e0f-8615-8032604be7ad",
 			"version": "1.0.0"
+		},
+		"sql-db": {
+			"command": "docker",
+			"args": [
+				"run",
+				"--rm",
+				"-i",
+				"-e",
+				"SQL_MCP_DSN=${input:DB_DSN}",
+				"mcp/sql"
+			],
+			"type": "stdio"
+		},
+		"postman-api-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"@postman/postman-mcp-server",
+				"--full",
+				"--region",
+				"us"
+			],
+			"env": {
+				"POSTMAN_API_KEY": "${input:postman-api-key}"
+			}
 		}
-} }
+	},
+	"inputs": [
+		{
+			"id": "postman-api-key",
+			"type": "promptString",
+			"description": "Enter your Postman API key"
+		},
+		{
+			"id": "DB_DSN",
+			"type": "promptString",
+			"description": "Database connection string for AGI Force MVP",
+			"default": "postgresql://agi_user:agi_pass@localhost:5432/agi_force_mvp?sslmode=disable"
+		}
+	]
+}

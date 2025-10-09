@@ -1,10 +1,10 @@
-import type { ConversationRepository } from '../ports/ConversationRepository.js';
-import type { Message } from '../entities/Message.js';
 import type { ContextId, Participant } from '../entities/ConversationContext.js';
-import { ContextNotFoundError, InvalidMessageError } from '../errors/ContextErrors.js';
+import type { Message } from '../entities/Message.js';
+import { InvalidMessageError } from '../errors/ContextErrors.js';
+import type { ConversationRepository } from '../ports/ConversationRepository.js';
 
 export class AddMessageUseCase {
-  constructor(private readonly repository: ConversationRepository) {}
+  constructor(private readonly repository: ConversationRepository) { }
 
   async execute(
     contextId: ContextId,

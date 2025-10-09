@@ -29,9 +29,9 @@ export class InMemoryConversationRepository implements ConversationRepository {
       }
 
       // Match participants
-      const participantsMatch = filter.participants.every(p => 
+      const participantsMatch = filter.participants.every(p =>
         context.participants.includes(p)
-      ) && context.participants.every(p => 
+      ) && context.participants.every(p =>
         filter.participants.includes(p)
       );
 
@@ -78,7 +78,7 @@ export class InMemoryConversationRepository implements ConversationRepository {
 
     const id = randomUUID();
     const message = MessageEntity.create(id, contextId, sender, content, timestamp);
-    
+
     const messages = this.messages.get(contextId) || [];
     messages.push(message);
     this.messages.set(contextId, messages);
@@ -88,7 +88,7 @@ export class InMemoryConversationRepository implements ConversationRepository {
 
   async getMessages(filter: MessageFilter): Promise<Message[]> {
     const messages = this.messages.get(filter.contextId) || [];
-    
+
     let filtered = [...messages];
 
     // Filter by date range

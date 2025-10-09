@@ -2,10 +2,11 @@
 
 **Feature Branch**: `001-contexto-persistente-mvp`  
 **Created**: 2024-12-22  
-**Status**: Draft  
+**Status**: En revisión  
 **Input**: User description: "Contexto Persistente (MVP) - El bot debe mantener un historial de conversación para usuarios individuales y grupos, permitiendo responder con contexto apropiado"
 
 ## Execution Flow (main)
+
 ```
 1. Parse user description from Input
    → "Bot must maintain conversation history for individual users and groups"
@@ -36,23 +37,27 @@
 ---
 
 ## ⚡ Quick Guidelines
+
 - ✅ Focus on WHAT users need and WHY
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
 
 ### Section Requirements
+
 - **Mandatory sections**: Must be completed for every feature
 - **Optional sections**: Include only when relevant to the feature
 - When a section doesn't apply, remove it entirely (don't leave as "N/A")
 
 ### For AI Generation
+
 When creating this spec from a user prompt:
+
 1. **Mark all ambiguities**: Use [NEEDS CLARIFICATION: specific question] for any assumption you'd need to make
 2. **Don't guess**: If the prompt doesn't specify something (e.g., "login system" without auth method), mark it
 3. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item
 4. **Common underspecified areas**:
    - User types and permissions
-   - Data retention/deletion policies  
+   - Data retention/deletion policies
    - Performance targets and scale
    - Error handling behaviors
    - Integration requirements
@@ -63,18 +68,21 @@ When creating this spec from a user prompt:
 ## Clarifications
 
 ### Session 2024-12-22
+
 - Q: Cuando un usuario hace una referencia ambigua como "¿Qué pasó con eso?" sin contexto claro, ¿cómo debe responder el bot? → A: Pedir aclaración ("¿Podrías ser más específico sobre qué tema te refieres?")
 - Q: ¿Cómo manejará el bot conversaciones largas donde el usuario cambia repetidamente de tema? → A: Mantener contexto de todos los temas pero destacar el más reciente
 - Q: ¿Cuánto tiempo debe mantenerse el historial de conversación antes de que sea eliminado o archivado? → A: 30 días desde la última interacción con advertencia al usuario
 - Q: ¿Cómo debe manejar el bot el contexto cuando un usuario participa en múltiples grupos diferentes? → A: Mantener contextos completamente separados por grupo
 - Q: ¿Qué nivel de detalle debe incluir el contexto almacenado para generar respuestas relevantes? → A: Solo mensajes de texto completos y timestamps
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### Primary User Story
+
 As a Slack user, I want to have natural, contextual conversations with the AGI Force bot where it remembers our previous interactions, so that I don't have to repeat information and can build upon previous discussions. Whether I'm chatting in a direct message or participating in a group channel, the bot should understand the ongoing conversation context and respond appropriately.
 
 ### Acceptance Scenarios
+
 1. **Given** a user has had previous conversations with the bot in DM, **When** the user sends a follow-up message referencing earlier topics, **Then** the bot responds with relevant context from the conversation history
 2. **Given** a group channel has ongoing discussions with the bot, **When** any member references previous topics or decisions made in that channel, **Then** the bot provides contextually appropriate responses based on the group's conversation history
 3. **Given** a user interacts with the bot in both DM and group contexts, **When** the user switches between contexts, **Then** the bot maintains separate, appropriate context for each interaction space
@@ -82,6 +90,7 @@ As a Slack user, I want to have natural, contextual conversations with the AGI F
 5. **Given** a long conversation history exists, **When** a user asks a question, **Then** the bot retrieves and uses the most relevant context rather than all historical data
 
 ### Edge Cases
+
 - What happens when conversation history becomes very large (performance considerations)?
 - How does the system handle users who delete/edit messages after bot responses?
 - What happens when a user is removed from a group - does their context persist?
@@ -90,9 +99,10 @@ As a Slack user, I want to have natural, contextual conversations with the AGI F
 - How does the bot prioritize between recent context and explicit user references to older topics?
 - What happens when a user tries to reference context from a group they were removed from?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
+
 - **FR-001**: System MUST maintain separate conversation history for each unique user in direct messages
 - **FR-002**: System MUST maintain separate conversation history for each unique group/channel
 - **FR-003**: System MUST persist conversation context across bot restarts and user sessions
@@ -111,7 +121,25 @@ As a Slack user, I want to have natural, contextual conversations with the AGI F
 - **FR-016**: System MUST maintain completely separate contexts for each group, preventing cross-group context bleeding
 - **FR-017**: System MUST store only message text content and timestamps for context reconstruction (MVP scope)
 
-### Key Entities *(include if feature involves data)*
+### Non-Functional Requirements
+
+- **NFR-001**: Persisted context MUST survive service restarts and infrastructure failures thanks to durable storage
+- **NFR-002**: Context retrieval MUST complete in under 500ms for the most recent 50 messages under expected MVP load
+- **NFR-003**: The system MUST protect user privacy by enforcing access controls aligned with Slack channel membership
+- **NFR-004**: Cleanup operations MUST finish within their scheduled window without blocking user-facing traffic
+- **NFR-005**: All persistence and retrieval operations MUST be observable via structured logs for auditability
+
+### Definition of Done
+
+1. Todas las historias de usuario cuentan con escenarios automatizados en Spec Kit que ejercitan tanto contextos de DM como de canal.
+2. Los contratos HTTP descritos en `openapi/context-api.yaml` se validan con pruebas de contrato y esquemas JSON actualizados.
+3. La capa de persistencia utiliza una base de datos relacional gestionada (PostgreSQL en entornos persistentes, SQLite solo para desarrollo offline) a través de un ORM tipado.
+4. Las políticas de retención de 30 días y la notificación previa al borrado están cubiertas por pruebas de integración contra la base de datos real.
+5. Las métricas de tiempo de respuesta (<2s) y recuperación de contexto (<500ms) se monitorizan durante la validación.
+6. El bot de Slack demuestra, en entorno de pruebas, respuestas diferenciadas al alternar entre DM y canal compartido con el mismo usuario.
+
+### Key Entities _(include if feature involves data)_
+
 - **Conversation Context**: Represents the ongoing dialogue state for a specific user or group, including message history, key topics, and temporal sequence
 - **Message History**: Individual messages with content, sender, timestamp, and conversation thread information
 - **Participant Context**: Information about users and their roles within specific conversation contexts (individual vs group member)
@@ -120,17 +148,20 @@ As a Slack user, I want to have natural, contextual conversations with the AGI F
 ---
 
 ## Review & Acceptance Checklist
-*GATE: Automated checks run during main() execution*
+
+_GATE: Automated checks run during main() execution_
 
 ### Content Quality
+
 - [ ] No implementation details (languages, frameworks, APIs)
 - [ ] Focused on user value and business needs
 - [ ] Written for non-technical stakeholders
 - [ ] All mandatory sections completed
 
 ### Requirement Completeness
+
 - [ ] No [NEEDS CLARIFICATION] markers remain
-- [ ] Requirements are testable and unambiguous  
+- [ ] Requirements are testable and unambiguous
 - [ ] Success criteria are measurable
 - [ ] Scope is clearly bounded
 - [ ] Dependencies and assumptions identified
@@ -138,7 +169,8 @@ As a Slack user, I want to have natural, contextual conversations with the AGI F
 ---
 
 ## Execution Status
-*Updated by main() during processing*
+
+_Updated by main() during processing_
 
 - [x] User description parsed
 - [x] Key concepts extracted

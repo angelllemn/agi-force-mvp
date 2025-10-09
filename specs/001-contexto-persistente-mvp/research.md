@@ -5,125 +5,141 @@
 **Phase**: 0 - Technical Research
 
 ## Research Objectives
-1. Validate PostgreSQL integration with Node.js/TypeScript
-2. Confirm Mastra framework context integration patterns
-3. Research conversation storage best practices
-4. Validate performance constraints for context retrieval
+
+1. Validar integración Prisma + PostgreSQL en Node.js/TypeScript
+2. Confirmar patrones de integración de contexto con Mastra
+3. Investigar mejores prácticas de almacenamiento conversacional
+4. Validar restricciones de performance para recuperación de contexto
+5. Definir estrategia de pruebas automatizadas (Vitest + Spec Kit + contratos)
 
 ## Key Technical Decisions
 
-### 1. Database Choice: PostgreSQL
-**Decision**: PostgreSQL para producción, SQLite para MVP/testing
-**Rationale**: 
-- JSONB support para almacenamiento flexible de contexto
-- Escalabilidad probada para aplicaciones conversacionales
-- Índices optimizados para búsquedas por participante/timestamp
-- Transacciones ACID para consistencia de datos
+### 1. Persistence Stack: Prisma + PostgreSQL / SQLite
+
+**Decision**: Prisma ORM con PostgreSQL (CI/producción) y SQLite (desarrollo offline)
+**Rationale**:
+
+- Prisma provee tipos generados para TypeScript con estricto control de nullabilidad
+- Soporte first-class para migraciones versionadas (`prisma migrate`) y generación de cliente
+- Adaptadores equivalentes para PostgreSQL y SQLite, facilitando el cambio de entorno
+- Permite middlewares y hooks para auditar operaciones críticas (ej. limpieza)
 
 ### 2. Schema Design
-**Conversation Context Structure**:
-```sql
-CREATE TABLE conversation_contexts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    context_type VARCHAR(10) NOT NULL CHECK (context_type IN ('user', 'group')),
-    participants TEXT[] NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days')
-);
 
-CREATE TABLE conversation_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    context_id UUID NOT NULL REFERENCES conversation_contexts(id) ON DELETE CASCADE,
-    sender TEXT NOT NULL,
-    content TEXT NOT NULL,
-    timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+**Conversational Context**:
 
--- Índices para performance
-CREATE INDEX idx_contexts_type_participants ON conversation_contexts(context_type, participants);
-CREATE INDEX idx_contexts_expires_at ON conversation_contexts(expires_at);
-CREATE INDEX idx_messages_context_timestamp ON conversation_messages(context_id, timestamp DESC);
-```
+- Prisma modela `ConversationContext`, `ContextParticipant` y `ConversationMessage` (ver `data-model.md`)
+- Uso de enumeraciones (`ContextType`) para garantizar valores válidos
+- Índices para búsquedas frecuentes (`type`, `expiresAt`, `participant`, `contextId + timestamp`)
+- Estrategia de `softDelete`: añadir `deletedAt` opcional en migración posterior para retención con gracia
 
 ### 3. Context Retrieval Strategy
-**Decision**: Retrieval basado en relevancia temporal y límites de performance
+
+**Decision**: Búsquedas orientadas a recencia y privacidad
 **Implementation**:
-- Recuperar últimos 50 mensajes por defecto
-- Priorizar mensajes de las últimas 24 horas
-- Implementar paginación para conversaciones largas
-- Cache en memoria para contextos accedidos frecuentemente
+
+- Recuperar últimos 50 mensajes por defecto (parámetro configurable en dominio)
+- Filtrar por `participants` y `type` con consulta Prisma tipada
+- Aplicar `orderBy: { timestamp: 'desc' }` y paginación basada en cursor
+- Cache opcional de corta duración utilizando Mastra memory tools (evaluar tras MVP)
 
 ### 4. Data Retention Policy
-**Decision**: Auto-cleanup de contextos expirados
+
+**Decision**: Limpieza automatizada con retención de 30 días
 **Implementation**:
-- Scheduled job cada 6 horas para cleanup
-- Notificación 7 días antes de expiración
-- Soft delete con periodo de gracia de 7 días
+
+- Job orquestado desde Mastra workflow o cron externo (6h)
+- Notificación previa a través de Slack DM usando herramienta Mastra
+- Soft delete (`deletedAt`) + eliminación dura tras 7 días de gracia
+- Transacciones Prisma para asegurar consistencia entre mensajes y contexto
+
+### 5. Testing & Tooling Strategy
+
+**Decision**: Vitest como runner único + Spec Kit para escenarios Gherkin-like
+**Implementation**:
+
+- Contratos HTTP validados con AJV en pruebas Vitest
+- Escenarios Spec Kit almacenados en `specs/001.../tests` y ejecutados vía `npm run spec:check`
+- Testcontainers (evaluation) vs Docker Compose: preferible `docker compose up postgres` para CI; evaluar `@testcontainers/postgresql` si se requiere aislamiento adicional
 
 ## Technology Stack Validation
 
-### Node.js + PostgreSQL Integration
-**Library**: `pg` (PostgreSQL client)
-**Connection Pooling**: Built-in pool management
-**Migration Strategy**: Simple SQL scripts en `infra/persistence/migrations/`
+### Node.js + Prisma Integration
+
+**Client**: Prisma Client (`@prisma/client`)
+**Connection Pooling**: Gestionado por Prisma + driver subyacente
+**Migration Strategy**: `prisma migrate dev` (local), `prisma migrate deploy` (CI/CD)
+**Type Safety**: Generación automática de tipos para repositorio Postgres/SQLite
 
 ### Mastra Framework Integration
+
 **Integration Points**:
+
 - Context injection en agent responses vía Mastra tools
 - Webhook integration para captura de mensajes
 - Response enhancement con contexto histórico
 
 ### Performance Considerations
+
 **Target Metrics**:
+
 - Context retrieval: <500ms
 - Message storage: <100ms
-- Auto-cleanup: Background, no impact en runtime
+- Migraciones Prisma: <2 min en despliegue
+- Auto-cleanup: Background, sin impacto en tiempo de respuesta
 
 ## Risk Assessment
 
 ### Low Risk
+
 - PostgreSQL integration (tecnología probada)
 - Basic CRUD operations (patrones conocidos)
 - Schema design (requirements claros)
 
 ### Medium Risk
+
 - Mastra integration complexity (documentación limitada)
 - Context relevance algorithm (lógica de negocio compleja)
 - Performance at scale (optimización requerida)
 
 ### High Risk
+
 - Cross-platform context bleeding (security critical)
 - Data consistency durante cleanup (transacciones complejas)
 
 ## Research Conclusions
 
 ### ✅ Viable Approaches
-1. **PostgreSQL + pg library**: Standard, bien soportado
-2. **Hexagonal architecture**: Separation clara entre core y adapters
-3. **JSONB storage**: Flexible para evolución del schema
-4. **Scheduled cleanup**: Reliable con cron jobs
+
+1. **Prisma + PostgreSQL**: Tipado robusto y migraciones declarativas
+2. **Hexagonal architecture**: Separación clara entre core y adapters
+3. **Soft delete + retención**: Respaldo para auditoría
+4. **Scheduled cleanup**: Fiable mediante cron/Mastra workflow
 
 ### ⚠️ Areas Requiring Attention
-1. **Mastra integration**: Necesita research adicional con Context7 MCP
-2. **Context relevance**: Algorithm complejo, empezar simple
-3. **Performance monitoring**: Métricas desde día 1
+
+1. **Mastra integration**: Requiere investigación adicional con Context7 MCP
+2. **Sincronización Prisma ↔ Zod ↔ OpenAPI**: Documentar pipeline para evitar drift
+3. **Performance monitoring**: Métricas desde día 1 (Pino + observabilidad)
 
 ### 🚫 Rejected Approaches
+
 1. **NoSQL solutions**: Overkill para MVP, menos consistencia
 2. **In-memory only**: No persistence, pérdida de contexto en restarts
 3. **File-based storage**: No escalable, difficult backup/recovery
 
 ## Next Steps - Phase 1
-1. Create data model interfaces in core/
-2. Design OpenAPI contracts for context endpoints
-3. Implement PostgreSQL adapter
-4. Create basic CRUD use cases
-5. Setup contract tests and validation
+
+1. Crear modelos de dominio y mapping Prisma
+2. Actualizar contratos OpenAPI y esquemas Zod
+3. Prototipar PostgresConversationRepository con Prisma Client
+4. Ajustar casos de uso para persistencia real y retención
+5. Configurar pruebas Vitest + Spec Kit contra base de datos real
 
 ## References
+
 - [To be filled with Context7 MCP research results]
+- Prisma ORM documentation
 - PostgreSQL JSONB documentation
-- Node.js pg library documentation
+- Vitest & Spec Kit documentation
 - Mastra framework integration patterns

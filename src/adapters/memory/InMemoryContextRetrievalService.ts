@@ -6,7 +6,7 @@ import type { ConversationRepository } from '../../core/ports/ConversationReposi
 import type { ContextFilter, MessageFilter } from '../../core/value-objects/Filters.js';
 
 export class InMemoryContextRetrievalService implements ContextRetrievalService {
-  constructor(private readonly repository: ConversationRepository) {}
+  constructor(private readonly repository: ConversationRepository) { }
 
   async findRelevantContext(filter: ContextFilter): Promise<ConversationHistory[]> {
     // For MVP, just return single matching context
@@ -22,9 +22,9 @@ export class InMemoryContextRetrievalService implements ContextRetrievalService 
 
   async getLatestMessages(filter: MessageFilter): Promise<Message[]> {
     const messages = await this.repository.getMessages(filter);
-    
+
     // Sort by timestamp descending and apply limit
-    const sorted = [...messages].sort((a, b) => 
+    const sorted = [...messages].sort((a, b) =>
       b.timestamp.getTime() - a.timestamp.getTime()
     );
 
