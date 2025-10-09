@@ -1,10 +1,10 @@
-
 # Implementation Plan: Contexto Persistente (MVP)
 
 **Branch**: `001-contexto-persistente-mvp` | **Date**: 2024-12-22 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-contexto-persistente-mvp/spec.md`
 
 ## Execution Flow (/plan command scope)
+
 ```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
@@ -27,51 +27,60 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Implementar contexto persistente para el bot AGI Force que mantenga historial de conversación separado por usuario (DMs) y grupos (channels). El sistema debe almacenar únicamente texto de mensajes y timestamps por 30 días, permitir recuperación de contexto relevante para respuestas apropiadas, y manejar referencias ambiguas pidiendo clarificación al usuario.
+
+Implementar contexto persistente para el bot AGI Force que mantenga historial de conversación separado por usuario (DMs) y grupos (channels). El sistema debe almacenar únicamente texto de mensajes y timestamps por 30 días, permitir recuperación de contexto relevante para respuestas apropiadas, y manejar referencias ambiguas pidiendo clarificación al usuario. La persistencia se realizará sobre PostgreSQL (durable) y SQLite (modo desarrollo rápido) a través de Prisma, manteniendo contratos HTTP en sincronía con los esquemas Zod y pruebas de Spec Kit.
 
 ## Technical Context
+
 **Language/Version**: Node.js v20 + TypeScript (strict mode)
-**Primary Dependencies**: Express.js, Mastra Framework, Zod, Pino
-**Storage**: PostgreSQL (production) / SQLite (MVP testing)
-**Testing**: Jest (unit + integration), Spectral (contract validation)
+**Primary Dependencies**: Mastra Framework, Prisma ORM, Zod, Pino, Slack Bolt
+**Storage**: PostgreSQL (CI/producción) / SQLite (modo offline local)
+**Testing**: Vitest (unit, integration, contract harness), Spec Kit (escenarios conversacionales), AJV + OpenAPI parser (contratos)
 **Target Platform**: Linux server (Docker containers)
 **Project Type**: Backend service (bot integration)
 **Performance Goals**: <2s response time, context retrieval <500ms
-**Constraints**: 30-day retention policy, text-only storage (MVP), separate contexts per user/group
+**Constraints**: 30-day retention policy, text-only storage (MVP), separate contexts per user/group, limpieza automática documentada
 **Scale/Scope**: MVP scope - basic persistence and retrieval, ~10-100 concurrent conversations
 
 ## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Arquitectura Hexagonal/Clean (OBLIGATORIO)
-- [ ] **Core ports defined**: ConversationRepository, ContextRetrieval, ConversationContext
-- [ ] **Adapters planned**: PostgreSQL adapter, memory adapter (testing)
-- [ ] **Domain isolation**: Core entities without external dependencies
+
+- [ ] **Core ports defined**: ConversationRepository, ContextRetrieval, ContextCleanup en `src/core/ports`
+- [ ] **Adapters planned**: Prisma/PostgreSQL adapter, memory adapter (testing)
+- [ ] **Domain isolation**: Core entities sin dependencias externas
 - [ ] **Use cases**: Context storage, retrieval, cleanup services
-- [ ] **Error handling**: Typed errors in core/errors/
+- [ ] **Error handling**: Typed errors en `src/core/errors`
 
 ### Spec-Driven Development (NO negociable)
-- [ ] **OpenAPI first**: Context management endpoints in openapi/
-- [ ] **JSON Schema**: ConversationContext, Message schemas
-- [ ] **Contract tests**: Validation before implementation
-- [ ] **Tests first**: Unit tests for core logic
+
+- [ ] **OpenAPI first**: Context management endpoints en `openapi/context-api.yaml`
+- [ ] **JSON Schema**: ConversationContext, Message schemas sincronizados con Prisma y Zod
+- [ ] **Contract tests**: Validación antes de implementación (AJV + Vitest)
+- [ ] **Tests first**: Unit tests para core logic y escenarios Spec Kit
 
 ### Context7 MCP Compliance
-- [ ] **Research phase**: Use Context7 for PostgreSQL, Node.js documentation
+
+- [ ] **Research phase**: Use Context7 para Prisma, PostgreSQL, Mastra
 - [ ] **Official sources only**: No blogs or unofficial tutorials
 - [ ] **Version verification**: Confirm compatibility with project versions
 
 ### Calidad y Testing
-- [ ] **TypeScript strict**: All types explicit, boundary enforcement
+
+- [ ] **TypeScript strict**: Tipos explícitos y enforcement en límites
 - [ ] **Coverage targets**: ≥90% core/, ≥80% adapters/
-- [ ] **Zod validation**: Configuration and data validation
-- [ ] **Structured logging**: Pino with correlation IDs
+- [ ] **Zod validation**: Configuración y validación de entrada/salida alineada con contratos
+- [ ] **Structured logging**: Pino con correlation IDs y metadatos de conversación
 
 ### Idioma y Estilo
+
 - [ ] **Código en inglés**: Variables, funciones, clases, interfaces
 - [ ] **Documentación en español**: Comentarios, README, especificaciones
 - [ ] **Consistencia**: Naming conventions y patrones establecidos
@@ -79,6 +88,7 @@ Implementar contexto persistente para el bot AGI Force que mantenga historial de
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
@@ -89,59 +99,50 @@ specs/[###-feature]/
 └── tasks.md             # Phase 2 output (/tasks command - NOT created by /plan)
 ```
 
+ios/ or android/
+
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── adapters/
+│   ├── memory/
+│   └── slack/
+├── core/
+│   ├── entities/
+│   ├── errors/
+│   ├── ports/
+│   └── use-cases/
+├── infra/
+│   ├── config/
+│   └── mastra/
+└── slack-bridge.ts
 
 tests/
-├── contract/
 ├── integration/
-└── unit/
+├── unit/
+└── specs.test.ts
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+specs/001-contexto-persistente-mvp/
+├── contracts/
+├── data-model.md
+├── plan.md
+├── quickstart.md
+├── research.md
+└── spec.md
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Proyecto único backend con carpeta `src/` y pruebas en `tests/`, siguiendo arquitectura hexagonal. Los artefactos de especificación viven bajo `specs/001-contexto-persistente-mvp/`.
 
 ## Phase 0: Outline & Research
+
 1. **Extract unknowns from Technical Context** above:
    - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
+
    ```
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
@@ -156,52 +157,46 @@ directories captured above]
 
 **Output**: research.md with all NEEDS CLARIFICATION resolved
 
-## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
+**Phase 1**: Design & Contracts
+_Prerequisites: research.md complete_
 
-1. **Extract entities from feature spec** → `data-model.md`:
-   - Entity name, fields, relationships
-   - Validation rules from requirements
-   - State transitions if applicable
+1. **Refinar entidades y eventos** en `data-model.md`:
+   - Interfaz de dominio y representación Prisma
+   - Reglas de retención y políticas de limpieza
+   - Restricciones de privacidad y acceso
 
-2. **Generate API contracts** from functional requirements:
-   - For each user action → endpoint
-   - Use standard REST/GraphQL patterns
-   - Output OpenAPI/GraphQL schema to `/contracts/`
+2. **Actualizar contratos HTTP** a partir de requisitos funcionales:
+   - Mantener `openapi/context-api.yaml` sincronizado con Zod y Prisma
+   - Regenerar esquemas JSON si cambian campos
 
-3. **Generate contract tests** from contracts:
-   - One test file per endpoint
-   - Assert request/response schemas
-   - Tests must fail (no implementation yet)
+3. **Preparar harness de pruebas**:
+   - Escenarios Spec Kit derivados de historias de usuario (DM y grupo)
+   - Pruebas de contrato con Vitest + AJV que referencian el OpenAPI actualizado
 
-4. **Extract test scenarios** from user stories:
-   - Each story → integration test scenario
-   - Quickstart test = story validation steps
+4. **Planificar migraciones Prisma**:
+   - Definir modelo `schema.prisma`
+   - Documentar comandos `prisma migrate dev` y `prisma generate`
 
-5. **Update agent file incrementally** (O(1) operation):
-   - Run `.specify/scripts/bash/update-agent-context.sh codex`
-     **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
-   - If exists: Add only NEW tech from current plan
-   - Preserve manual additions between markers
-   - Update recent changes (keep last 3)
-   - Keep under 150 lines for token efficiency
-   - Output to repository root
+5. **Actualizar quickstart** con flujos Postgres/SQLite, comandos Prisma, ejecución Spec Kit
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, contratos actualizados, pruebas fallando, quickstart.md alineado, plan de migraciones documented
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+
+_This section describes what the /tasks command will do - DO NOT execute during /plan_
 
 **Task Generation Strategy**:
+
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
 - Each contract → contract test task [P]
-- Each entity → model creation task [P] 
+- Each entity → model creation task [P]
 - Each user story → integration test task
 - Implementation tasks to make tests pass
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
+
+- TDD order: Tests before implementation
 - Dependency order: Models before services before UI
 - Mark [P] for parallel execution (independent files)
 
@@ -210,16 +205,19 @@ directories captured above]
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+
+_These phases are beyond the scope of the /plan command_
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Constitution Check (Re-evaluation)
-*GATE: Re-check after Phase 1 design.*
+
+_GATE: Re-check after Phase 1 design._
 
 ### Arquitectura Hexagonal/Clean ✅
+
 - [x] **Core ports defined**: ConversationRepository, ContextRetrieval, ContextCleanup en data-model.md
 - [x] **Adapters planned**: PostgreSQL adapter, memory adapter (testing) especificados
 - [x] **Domain isolation**: Core entities sin dependencias externas en data-model.md
@@ -227,37 +225,42 @@ directories captured above]
 - [x] **Error handling**: Typed errors en core/errors/ especificados
 
 ### Spec-Driven Development ✅
+
 - [x] **OpenAPI first**: Context management endpoints en contracts/context-api.yaml
 - [x] **JSON Schema**: ConversationContext, Message schemas completos
 - [x] **Contract tests**: Validation antes de implementación planificada
 - [x] **Tests first**: Unit tests para core logic especificados
 
 ### Context7 MCP Compliance ✅
+
 - [x] **Research phase**: Documentación oficial de PostgreSQL y Node.js
 - [x] **Official sources only**: No blogs o tutoriales no oficiales
 - [x] **Version verification**: Compatibilidad con versiones del proyecto
 
 ### Calidad y Testing ✅
+
 - [x] **TypeScript strict**: Todos los tipos explícitos, boundary enforcement
 - [x] **Coverage targets**: ≥90% core/, ≥80% adapters/ especificado
 - [x] **Zod validation**: Configuración y validación de datos
 - [x] **Structured logging**: Pino con correlation IDs
 
 ### Idioma y Estilo ✅
+
 - [x] **Código en inglés**: Variables, funciones, clases, interfaces en contratos
 - [x] **Documentación en español**: Comentarios, README, especificaciones
 - [x] **Consistencia**: Naming conventions y patrones establecidos
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
-
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
 
 ## Progress Tracking
-*This checklist is updated during execution flow*
+
+_This checklist is updated during execution flow_
 
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command) - research.md generated
 - [x] Phase 1: Design complete (/plan command) - data-model.md, contracts/, quickstart.md generated
 - [x] Phase 2: Task planning complete (/plan command - describe approach only)
@@ -266,12 +269,14 @@ directories captured above]
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved (clarifications exist in spec.md)
 - [x] Complexity deviations documented: None required - design follows constitution
 
 **Generated Artifacts**:
+
 - [x] research.md - Technical decisions and approach validation
 - [x] data-model.md - Domain entities, repositories, and business rules
 - [x] contracts/context-api.yaml - OpenAPI specification for context endpoints
@@ -280,4 +285,5 @@ directories captured above]
 **Ready for**: `/tasks` command to generate implementation tasks
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+
+_Based on Constitution v2.1.1 - See `/memory/constitution.md`_

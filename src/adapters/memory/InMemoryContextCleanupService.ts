@@ -6,7 +6,7 @@ export class InMemoryContextCleanupService implements ContextCleanupService {
   constructor(
     private readonly repository: ConversationRepository,
     private readonly retentionDays: number = 30
-  ) {}
+  ) { }
 
   async findExpiredContexts(): Promise<ConversationContext[]> {
     const cutoffDate = new Date();
